@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR SHOT - Панель администратора</title>
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body id="top">
+    <header class="admin-header">
+        <div class="admin-header-inner">
+            <a class="app-logo" href="#top">
+                <span class="app-logo-icon" data-brand-icon>QR</span>
+                <span class="app-logo-text">SHOT</span>
+            </a>
+            <button class="admin-nav-toggle" type="button" aria-expanded="false" aria-controls="adminNavControls" aria-label="Открыть меню">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="admin-header-right" id="adminNavControls">
+                <nav class="admin-nav">
+                    <a class="nav-tab" href="#events-tab"><i class="fas fa-calendar"></i> <span data-i18n="events">События</span></a>
+                    <a class="nav-tab" href="#moderation-tab"><i class="fas fa-shield"></i> <span data-i18n="moderation">Модерация</span></a>
+                    <a class="nav-tab" href="#analytics-tab"><i class="fas fa-chart-bar"></i> <span data-i18n="analytics">Аналитика</span></a>
+                </nav>
+                <div class="header-actions">
+                    <button class="create-event-btn"><i class="fas fa-plus"></i> <span data-i18n="createEvent">Создать событие</span></button>
+                    <div class="header-secondary-actions">
+                        <div class="language-dropdown admin-language" id="adminLanguageDropdown">
+                            <button class="language-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                <span data-admin-lang>RU</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <ul class="language-menu" role="listbox">
+                                <li data-lang="ru" role="option" aria-selected="true">RU</li>
+                                <li data-lang="kz" role="option">KZ</li>
+                                <li data-lang="en" role="option">EN</li>
+                            </ul>
+                        </div>
+                        <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Выйти</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="admin-container">
+        <main>
+            <!-- Вкладка событий -->
+            <section class="tab-content active" id="events-tab">
+                <div class="events-list section-block">
+                    <h2><i class="fas fa-calendar"></i> Список мероприятий</h2>
+                    <div class="event-grid">
+                        <!-- Пример события -->
+                        <div class="event-card">
+                            <div class="event-header">
+                                <h3>Свадьба Анны и Павла</h3>
+                                <span class="event-date">15.03.2024</span>
+                            </div>
+                            <div class="event-stats">
+                                <div><i class="fas fa-image"></i> 124 фото</div>
+                            </div>
+                            <div class="event-actions">
+                                <button class="qr-btn"><i class="fas fa-qrcode"></i></button>
+                                <button class="gallery-btn"><i class="fas fa-images"></i></button>
+                                <button class="settings-btn"><i class="fas fa-cog"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Вкладка модерации -->
+            <section class="tab-content section-block" id="moderation-tab">
+                <h2>
+                    <i class="fas fa-shield"></i>
+                    Ожидают модерации
+                    <span class="moderation-title__count" id="moderationPendingIndicator" aria-live="polite">0 фото</span>
+                </h2>
+                <div class="moderation-grid">
+                    <!-- Фото для модерации будут добавляться здесь -->
+                </div>
+            </section>
+
+            <!-- Вкладка аналитики -->
+            <section class="tab-content section-block" id="analytics-tab">
+                <h2><i class="fas fa-chart-bar"></i> Аналитика</h2>
+                <div class="analytics-actions">
+                    <button class="export-btn" data-type="pdf">
+                        <i class="fas fa-file-pdf"></i> Экспорт в PDF
+                    </button>
+                    <button class="export-btn" data-type="csv">
+                        <i class="fas fa-file-csv"></i> Экспорт в CSV
+                    </button>
+                </div>
+                <div class="analytics-cards">
+                    <div class="analytics-card">
+                        <h3>Общая статистика</h3>
+                        <div class="stat-item">
+                            <i class="fas fa-images"></i>
+                            <span>Всего фото: <b id="analyticsTotalPhotos">0</b></span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-database"></i>
+                            <span>Общий размер: <b id="analyticsTotalSize">0 МБ</b></span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>Всего мероприятий: <b id="analyticsTotalEvents">0</b></span>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>График загрузок</h3>
+                        <canvas id="uploadsChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Модальное окно создания события -->
+    <div class="modal" id="createEventModal">
+        <div class="modal-content create-event-modal">
+            <h2>Создать новое событие</h2>
+            <form id="createEventForm" class="create-event-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="createEventName">Название события</label>
+                        <input id="createEventName" type="text" name="name" placeholder="Название события" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="createEventDate">Дата события</label>
+                        <input id="createEventDate" type="date" name="date" required>
+                        <div class="date-quick-actions" id="createEventDateQuickActions" role="group" aria-label="Быстрый выбор даты">
+                            <button type="button" class="date-quick-btn" data-date-offset="1">Завтра</button>
+                            <button type="button" class="date-quick-btn" data-date-offset="2">Послезавтра</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="createEventTime">Время начала</label>
+                        <input id="createEventTime" type="time" name="time" required>
+                    </div>
+                    <div class="form-group form-group--full">
+                        <label for="createEventDescription">Описание</label>
+                        <textarea id="createEventDescription" name="description" placeholder="Описание события" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">Создать</button>
+                    <button type="button" class="cancel-btn">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно авторизации -->
+    <div class="modal" id="authModal">
+        <div class="modal-content auth-modal">
+            <h2>Вход в админ-панель</h2>
+            <form id="authForm">
+                <input type="text" name="username" placeholder="Логин" required>
+                <input type="password" name="password" placeholder="Пароль" required>
+                <button type="submit">Войти</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно настроек события -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content settings-modal">
+            <h2>Настройки события</h2>
+            <form id="settingsForm" class="settings-form">
+                <div class="settings-tabs">
+                    <button type="button" class="tab-btn active" data-tab="general">Основные</button>
+                    <button type="button" class="tab-btn" data-tab="privacy">Приватность</button>
+                    <button type="button" class="tab-btn" data-tab="branding">Брендинг</button>
+                </div>
+
+                <div class="settings-content settings-general active" id="general-content">
+                    <div class="form-group">
+                        <label>Название события:</label>
+                        <input type="text" name="eventName" placeholder="Название события" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата события:</label>
+                        <input type="date" name="eventDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Время начала:</label>
+                        <input type="time" name="eventTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Описание:</label>
+                        <textarea name="eventDescription" placeholder="Описание события" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="settings-content" id="privacy-content">
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="requireModeration">
+                            Требуется модерация фото
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Кто может загружать фото:</label>
+                        <select name="uploadAccess">
+                            <option value="all">Все по ссылке</option>
+                            <option value="invited">Только приглашенные</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Доступ к просмотру:</label>
+                        <select name="viewAccess">
+                            <option value="public">Публичный</option>
+                            <option value="private">По паролю</option>
+                            <option value="link">По ссылке</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-content" id="branding-content">
+                    <div class="form-group">
+                        <label>Цветовая схема:</label>
+                        <input type="color" name="primaryColor" value="#f5f5f5">
+                    </div>
+                    
+                    <div class="branding-preupload-panel">
+                        <button type="button" class="branding-preupload-btn" data-branding-preupload>
+                            <i class="fas fa-images"></i> Предварительная загрузка фото
+                        </button>
+                        <span class="branding-preupload-description">Отправьте фотографии в галерею на этапе создания мероприятия</span>
+                    </div>
+
+                    <div class="form-group branding-background-group">
+                        <label>Фоновое изображение:</label>
+                        <div class="branding-preview" data-branding-preview hidden>
+                            <div class="branding-preview-image" data-branding-preview-image></div>
+                            <button type="button" class="branding-remove-btn" data-remove-background>Удалить фон</button>
+                        </div>
+                        <label class="branding-upload-wrapper">
+                            <span class="branding-upload-btn"><i class="fas fa-upload"></i> Выберите файл</span>
+                            <input type="file" name="backgroundFile" accept="image/*">
+                        </label>
+                        <small class="branding-hint">Поддерживаются изображения JPG, PNG, WebP до 10&nbsp;МБ.</small>
+
+                    </div>
+                    <input type="file" id="brandingPreuploadInput" accept="image/*" multiple hidden>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit">Сохранить</button>
+                    <button type="button" class="cancel-btn">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно подтверждения удаления -->
+    <div class="modal" id="deleteConfirmModal">
+        <div class="modal-content">
+            <h2><i class="fas fa-exclamation-triangle"></i> Внимание</h2>
+            <p>Следующие фото будут удалены через <span id="daysToDelete">3</span> дня:</p>
+            <div class="photos-to-delete-grid"></div>
+            <div class="form-actions">
+                <button class="extend-btn">Продлить хранение</button>
+                <button class="download-btn">Скачать архив</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="photo-modal" id="moderationModal">
+        <button class="close-modal" type="button">&times;</button>
+        <img src="" alt="Фото на модерации" id="moderationModalImage">
+    </div>
+
+    <div id="notifications-container" class="notifications-container"></div>
+
+    <div class="modal" id="sessionExpiredModal" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-content session-expired-modal">
+            <h2>Сессия истекла</h2>
+            <p>Ваша сессия истекла, вы будете перенаправлены на главную страницу.</p>
+            <div class="session-expired-actions">
+                <button type="button" class="session-expired-confirm" data-session-expired-confirm>Ок</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="moderationConfirmModal" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-content moderation-confirm-modal">
+            <h2 id="moderationConfirmTitle">Подтверждение действия</h2>
+            <p id="moderationConfirmMessage">Вы уверены, что хотите выполнить это действие?</p>
+            <div class="moderation-confirm-actions">
+                <button type="button" class="moderation-confirm-cancel" data-moderation-confirm-cancel>Отмена</button>
+                <button type="button" class="moderation-confirm-apply" data-moderation-confirm-apply>Ок</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="eventStatusModal" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-content event-status-modal">
+            <h2 id="eventStatusModalTitle">Подтверждение действия</h2>
+            <p id="eventStatusModalMessage"></p>
+            <div class="event-status-modal-actions">
+                <button type="button" class="event-status-cancel" data-event-status-cancel>Отмена</button>
+                <button type="button" class="event-status-confirm" data-event-status-confirm>Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <a class="app-logo" href="#top">
+                <span class="app-logo-icon" data-brand-icon>QR</span>
+                <span class="app-logo-text">SHOT</span>
+            </a>
+            <p data-i18n="footerTagline">Делитесь моментами легко и безопасно</p>
+        </div>
+        <p class="footer-note">Все права защищены. Атырау 2026</p>
+    </footer>
+
+    <script src="js/brand.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

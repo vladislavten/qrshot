@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR-SHOT</title>
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/landing.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body id="top">
+    <header class="hero">
+        <nav class="nav">
+            <a class="app-logo" href="#top">
+                <span class="app-logo-icon" data-brand-icon>QR</span>
+                <span class="app-logo-text">SHOT</span>
+            </a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primaryNav" aria-label="Открыть меню">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-controls" id="primaryNav">
+                <div class="nav-links">
+                    <button class="nav-button auth-open-btn" data-open-auth data-i18n="navCreate">Создать мероприятие</button>
+                    <div class="language-dropdown" id="languageDropdown">
+                        <button class="language-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+                            <span data-current-lang>RU</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <ul class="language-menu" role="listbox">
+                            <li data-lang="ru" role="option" aria-selected="true">RU</li>
+                            <li data-lang="kz" role="option">KZ</li>
+                            <li data-lang="en" role="option">EN</li>
+                        </ul>
+                    </div>
+                    <button class="nav-link auth-open-btn" data-open-auth data-i18n="navAdmin">Админ-панель</button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="hero-typewriter" data-typewriter>
+                    <span class="hero-typewriter-text" data-typewriter-text aria-live="polite">
+                        Собирайте фотографии с мероприятий легко
+                    </span>
+                </span>
+            </h1>
+            <p data-i18n="heroSubtitle">Создавайте QR-коды для мероприятий, позволяйте гостям загружать фотографии и скачивайте всё одним архивом. Без регистрации и приложений.</p>
+            <div class="hero-actions">
+                <button class="primary-btn auth-open-btn" data-open-auth data-i18n="heroPrimary">Создать мероприятие</button>
+                <a class="secondary-btn" href="#how-it-works" data-i18n="heroSecondary">Узнать больше</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="steps" id="how-it-works">
+            <h2 data-i18n="stepsTitle">Как это работает</h2>
+            <p class="section-subtitle" data-i18n="stepsSubtitle">Простой процесс в три шага</p>
+            <div class="steps-grid">
+                <div class="step-card" style="--step-accent: #dee8ff;">
+                    <div class="step-icon">
+                        <img src="assets/icons/qr.svg" alt="" aria-hidden="true">
+                    </div>
+                    <h3 data-i18n="step1Title">Создайте мероприятие</h3>
+                    <p data-i18n="step1Text">Войдите в админ-панель, создайте мероприятие и получите уникальный QR-код.</p>
+                </div>
+                <div class="step-card" style="--step-accent: #e4f8ef;">
+                    <div class="step-icon">
+                        <img src="assets/icons/upload.svg" alt="" aria-hidden="true">
+                    </div>
+                    <h3 data-i18n="step2Title">Гости загружают фото</h3>
+                    <p data-i18n="step2Text">Гости сканируют QR-код и загружают фотографии напрямую со смартфонов.</p>
+                </div>
+                <div class="step-card" style="--step-accent: #f1e7ff;">
+                    <div class="step-icon">
+                        <img src="assets/icons/gallery.svg" alt="" aria-hidden="true">
+                    </div>
+                    <h3 data-i18n="step3Title">Скачайте все фото</h3>
+                    <p data-i18n="step3Text">Просматривайте галерею и скачивайте все фотографии одним ZIP-архивом.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="features" id="features">
+            <h2 data-i18n="featuresTitle">Преимущества</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <div>
+                        <h4 data-i18n="feature1Title">Без приложений</h4>
+                        <p data-i18n="feature1Text">Гости не устанавливают никаких приложений — просто сканируют QR-код</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <div>
+                        <h4 data-i18n="feature2Title">Быстрая загрузка фотографий</h4>
+                        <p data-i18n="feature2Text">Удобная загрузка нескольких фотографий одновременно</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <div>
+                        <h4 data-i18n="feature3Title">Автоматическое удаление</h4>
+                        <p data-i18n="feature3Text">Фотографии автоматически удаляются через 14 дней</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <div>
+                        <h4 data-i18n="feature4Title">Галерея с lightbox</h4>
+                        <p data-i18n="feature4Text">Удобный просмотр фотографий в полноэкранном режиме</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <div>
+                        <h4 data-i18n="feature5Title">ZIP архивы</h4>
+                        <p data-i18n="feature5Text">Скачивайте все фотографии одним архивом</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <div>
+                        <h4 data-i18n="feature6Title">Адаптивный дизайн</h4>
+                        <p data-i18n="feature6Text">Отлично работает на всех устройствах</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta">
+            <div class="cta-content">
+                <h2 data-i18n="ctaTitle">Готовы начать?</h2>
+                <p data-i18n="ctaSubtitle">Создайте своё первое мероприятие прямо сейчас.</p>
+                <button class="primary-btn auth-open-btn" data-open-auth data-i18n="ctaButton">Создать мероприятие</button>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal" id="landingAuthModal">
+        <div class="modal-content auth-modal">
+            <button class="close-modal" type="button" data-close-auth>&times;</button>
+            <h2>Вход в админ-панель</h2>
+            <form id="landingAuthForm">
+                <input type="text" name="username" placeholder="Логин" required>
+                <input type="password" name="password" placeholder="Пароль" required>
+                <div class="auth-message" aria-live="polite"></div>
+                <button type="submit">Войти</button>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <a class="app-logo" href="#top">
+                <span class="app-logo-icon" data-brand-icon>QR</span>
+                <span class="app-logo-text">SHOT</span>
+            </a>
+            <p data-i18n="footerTagline">Делитесь моментами легко и безопасно</p>
+        </div>
+        <p class="footer-note">Все права защищены. Атырау 2026</p>
+    </footer>
+    <script src="js/brand.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/landing-auth.js"></script>
+</body>
+</html>
+

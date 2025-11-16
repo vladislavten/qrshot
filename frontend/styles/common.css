@@ -1,0 +1,58 @@
+.app-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--primary, var(--primary-color, #1e3c72));
+}
+
+a.app-logo {
+    text-decoration: none;
+}
+
+.app-logo-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary, var(--primary-color, #1e3c72)) 0%, var(--accent, var(--accent-color, #2a5298)) 100%);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.app-logo-text {
+    font-weight: 700;
+}
+
+.footer {
+    background: #0d1b34;
+    color: rgba(255, 255, 255, 0.7);
+    padding: 32px 20px;
+}
+
+.footer-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.footer .app-logo {
+    color: #fff;
+}
+
+.footer-note {
+    margin: 12px auto 0;
+    max-width: 1100px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Галерея события - QR SHOT</title>
+    <link rel="stylesheet" href="styles/gallery.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="galleryUploadProgress" class="gallery-upload-progress" aria-hidden="true">
+        <div class="gallery-upload-progress__inner" aria-hidden="true"></div>
+    </div>
+    <div class="gallery-backdrop" aria-hidden="true"></div>
+    <div class="gallery-branding-overlay" aria-hidden="true"></div>
+    <div class="gallery-container">
+        <div class="gallery-inner">
+        <header class="gallery-header">
+                <div class="event-meta">
+                    <h1 id="eventTitle">Галерея события</h1>
+                    <p id="eventDate" class="event-date"></p>
+                </div>
+            <div class="gallery-controls">
+                    <button type="button" class="download-all">
+                        <i class="fas fa-download"></i>
+                        Скачать все
+                    </button>
+                    <select class="sort-select" aria-label="Сортировка фотографий">
+                        <option value="mostLiked">Самые популярные</option>
+                        <option value="newest" selected>Сначала новые</option>
+                    <option value="oldest">Сначала старые</option>
+                </select>
+                    <button type="button" id="uploadBtn" class="upload-btn">
+                        <i class="fas fa-upload"></i>
+                        Загрузить фото
+                    </button>
+                    <input type="file" id="fileInput" multiple accept="image/*" hidden>
+            </div>
+        </header>
+        <div class="gallery-status" id="galleryStatusContainer" aria-live="polite">
+            <span class="gallery-status-badge" id="galleryStatusBadge"></span>
+            <p class="gallery-status-message" id="galleryStatusMessage"></p>
+        </div>
+
+        <div class="photos-grid" id="photosGrid">
+            <!-- Фотографии будут добавляться динамически -->
+        </div>
+        <div class="gallery-loader" id="galleryLoader" aria-hidden="true">
+            <div class="gallery-loader__spinner" aria-hidden="true"></div>
+        </div>
+        <div id="galleryScrollSentinel" class="gallery-scroll-sentinel" aria-hidden="true"></div>
+    </div>
+    </div>
+
+    <footer class="footer gallery-footer">
+        <div class="footer-inner">
+            <a class="app-logo" href="index.html">
+                <span class="app-logo-icon">QR</span>
+                <span class="app-logo-text">SHOT</span>
+            </a>
+            <p>Делитесь моментами легко и безопасно</p>
+        </div>
+        <p class="footer-note">Все права защищены. Атырау 2026</p>
+    </footer>
+
+    <!-- Модальное окно для просмотра фото -->
+    <div class="photo-modal" id="photoModal">
+        <button class="close-modal">&times;</button>
+        <img src="" alt="Просмотр фото" id="modalImage">
+        <div class="modal-actions">
+            <button class="modal-like-btn" id="modalLikeBtn">
+                ❤️ <span id="modalLikeCount">0</span>
+            </button>
+            <div class="modal-actions-right">
+                <button class="modal-icon-btn" id="modalDownloadBtn" title="Скачать фото">
+                    <i class="fas fa-download"></i>
+                </button>
+                <div class="modal-share-wrapper">
+                    <button class="modal-icon-btn modal-share-toggle" id="modalShareToggle" title="Поделиться">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                    <div class="modal-share-buttons" id="modalShareButtons" hidden>
+                        <button class="share-btn" data-share-target="instagram" title="Instagram">
+                            <i class="fab fa-instagram"></i>
+                        </button>
+                        <button class="share-btn" data-share-target="tiktok" title="TikTok">
+                            <i class="fab fa-tiktok"></i>
+                        </button>
+                        <button class="share-btn" data-share-target="whatsapp" title="WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
+                        <button class="share-btn" data-share-target="telegram" title="Telegram">
+                            <i class="fab fa-telegram"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="nav-prev"><i class="fas fa-chevron-left"></i></button>
+        <button class="nav-next"><i class="fas fa-chevron-right"></i></button>
+    </div>
+    
+    <script src="js/config.js"></script>
+    <script src="js/gallery.js"></script>
+</body>
+</html>

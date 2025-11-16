@@ -1,0 +1,328 @@
+/* ...reset styles... */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+
+#bg-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: -1;
+}
+
+.liquid-glass {
+    background: rgba(255,255,255,0.25);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 40px 32px 32px 32px;
+    display: inline-block;
+}
+
+.liquid-glass-title {
+    color: #1e3c72;
+    font-size: 2.5em;
+    margin-bottom: 1.5em;
+    text-shadow: none;
+}
+
+.liquid-glass-desc {
+    font-size: 1.1em;
+    color: #fff;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.12), 0 0 16px #aeefff;
+    margin-bottom: 28px;
+}
+
+.search-form {
+    display: flex;
+    align-items: center;
+    gap: 15px;  /* уменьшили отступ между элементами */
+    margin: 20px auto;
+    width: 100%;
+    max-width: 1200px; /* увеличили максимальную ширину */
+    padding: 0 20px; /* добавили отступы по бокам */
+}
+
+.search-input-wrapper {
+    position: relative;
+    width: 45%;  /* уменьшили пропорцию */
+    min-width: 180px;
+}
+
+.search-input-wrapper i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+    font-size: 0.9em;  /* уменьшили размер иконки */
+}
+
+.search-input {
+    width: 100%;
+    padding: 8px 15px 8px 35px;  /* уменьшили внутренние отступы */
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    color: #333;
+    transition: all 0.3s;
+    font-size: 0.9em;  /* уменьшили размер шрифта */
+}
+
+.custom-select {
+    position: relative;
+    width: 35%;        /* фиксированная пропорция */
+    min-width: 160px;  /* минимальная ширина */
+}
+
+.select-header {
+    padding: 8px 15px;  /* уменьшили padding */
+    font-size: 0.9em;
+    border-radius: 12px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.35);
+    box-shadow: 0 2px 8px rgba(31,38,135,0.18);
+    color: #222;
+    border: none;
+    outline: none;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background 0.2s;
+}
+
+.select-header:hover {
+    background: rgba(255,255,255,0.45);
+}
+
+.select-header-text {
+    display: inline-block;
+    transition: transform 0.2s;
+}
+
+.select-header:hover .select-header-text {
+    transform: scale(1.12);
+}
+
+.select-options {
+    display: none;
+    position: absolute;
+    top: 110%;
+    left: 0;
+    right: 0;
+    background: rgba(255,255,255,0.25);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.18);
+    z-index: 10;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+/* Кастомный скроллбар: шарик */
+.select-options::-webkit-scrollbar {
+    width: 16px;
+    background: transparent;
+}
+
+.select-options::-webkit-scrollbar-thumb {
+    background: radial-gradient(circle at 50% 50%, #aeefff 60%, #0077b6 100%);
+    border-radius: 50%;
+    min-height: 32px;
+    margin: 4px;
+    border: 4px solid rgba(255,255,255,0.25);
+}
+
+.select-options::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.select-options {
+    scrollbar-width: thin;
+    scrollbar-color: #aeefff rgba(255,255,255,0.25);
+}
+
+/* Для Firefox: шарик-эффект */
+.select-options::-moz-scrollbar-thumb {
+    background: radial-gradient(circle at 50% 50%, #aeefff 60%, #0077b6 100%);
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.25);
+}
+
+.select-options.active {
+    display: block;
+}
+
+.select-option {
+    padding: 12px 20px;
+    cursor: pointer;
+    color: #222;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    transition: background 0.2s, color 0.2s;
+}
+
+.select-option:last-child {
+    border-bottom: none;
+}
+
+.select-option:hover {
+    background: rgba(174,239,255,0.25);
+    color: #0077b6;
+}
+
+.liquid-glass-link {
+    display: inline-block;
+    margin: 18px 0 28px 0;
+    padding: 10px 24px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.35);
+    color: #0077b6;
+    font-weight: 500;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(31,38,135,0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background 0.2s, color 0.2s;
+}
+.liquid-glass-link:hover {
+    background: rgba(174,239,255,0.25);
+    color: #005073;
+}
+
+.main-container {
+    width: calc(100% - 40px); /* вычитаем отступы с обеих сторон */
+    min-height: calc(100vh - 40px); /* вычитаем отступы сверху и снизу */
+    margin: 20px;
+    padding: 40px 60px; /* увеличили горизонтальные внутренние отступы */
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px; /* добавили скругление углов */
+}
+
+.search-button {
+    width: 20%;
+    min-width: 80px;
+    white-space: nowrap;
+    background: #1e3c72;
+    color: white;
+    padding: 8px 15px;
+    font-size: 0.9em;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    flex: none;        /* запрещаем расширение/сжатие */
+}
+
+.search-button:hover {
+    background: #2a5298;
+    transform: translateY(-2px);
+}
+
+.section-title {
+    max-width: 1400px; /* увеличили максимальную ширину */
+    margin: 40px auto 20px;
+    color: #1e3c72;
+    font-size: 1.8em;
+    text-align: left;
+    padding: 0 20px; /* добавили отступы по бокам */
+}
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    max-width: 1400px; /* увеличили максимальную ширину */
+    margin: 20px auto;
+    padding: 0 20px; /* добавили отступы по бокам */
+}
+
+.category-item {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: all 0.3s;
+}
+
+.category-item i {
+    font-size: 2em;
+    color: #1e3c72;
+}
+
+.jobs-list {
+    max-width: 1400px; /* увеличили максимальную ширину */
+    margin: 0 auto;
+    padding: 0 20px; /* добавили отступы по бокам */
+}
+
+.job-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin: 20px 0;
+    text-align: left;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s;
+}
+
+.job-card:hover {
+    background: rgba(255,255,255,0.35);
+    transform: translateY(-2px);
+}
+
+.job-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.job-header i {
+    font-size: 1.5em;
+    color: #1e3c72;
+}
+
+.company {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.9em;
+}
+
+.salary {
+    color: #aeefff;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* Стили для мобильных устройств */
+@media (max-width: 768px) {
+    .search-form {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .search-input-wrapper,
+    .custom-select,
+    .search-button {
+        width: 100%;
+    }
+}
