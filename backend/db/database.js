@@ -94,11 +94,15 @@ db.serialize(() => {
         status TEXT DEFAULT 'pending',
         likes INTEGER DEFAULT 0,
         uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        preview_filename TEXT,
         FOREIGN KEY (event_id) REFERENCES events (id)
     )`);
 
-    // Добавляем колонку likes, если база уже была создана
+    // Добавляем недостающие колонки, если база уже была создана раньше
     db.run(`ALTER TABLE photos ADD COLUMN likes INTEGER DEFAULT 0`, (err) => {
+        // Игнорируем ошибку при существующей колонке
+    });
+    db.run(`ALTER TABLE photos ADD COLUMN preview_filename TEXT`, (err) => {
         // Игнорируем ошибку при существующей колонке
     });
 });

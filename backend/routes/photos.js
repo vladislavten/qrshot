@@ -5,6 +5,7 @@ const multer = require('multer');
 const auth = require('../middleware/auth');
 const db = require('../db/database');
 const archiver = require('archiver');
+const sharp = require('sharp');
 
 // Ensure uploads directory exists
 const uploadsDir = path.resolve(path.join(__dirname, '..', 'uploads'));
@@ -67,6 +68,27 @@ function getFileUrl(req, filename) {
     return `${origin}/uploads/${filename}`;
 }
 
+async function generatePreviewForFile(file, uploadSubdir) {
+    const ext = path.extname(file.filename) || '.jpg';
+    const baseName = path.basename(file.filename, ext);
+    const previewFileName = `${baseName}-preview.jpg`;
+    const previewRelative = uploadSubdir ? `${uploadSubdir}/${previewFileName}` : previewFileName;
+    const previewAbsPath = path.join(uploadsDir, previewRelative);
+
+    await sharp(file.path)
+        .rotate()
+        .resize({
+            width: 1024,
+            height: 1024,
+            fit: 'inside',
+            withoutEnlargement: true
+        })
+        .jpeg({ quality: 75 })
+        .toFile(previewAbsPath);
+
+    return previewRelative;
+}
+
 function performPhotoUpload({ req, res, eventId, eventRow, skipStatusCheck = false }) {
     if (!skipStatusCheck) {
         const status = String(eventRow.status || '').toLowerCase();
@@ -86,7 +108,7 @@ function performPhotoUpload({ req, res, eventId, eventRow, skipStatusCheck = fal
 
     const uploader = createUploadMiddleware(eventId, eventRow.name, Boolean(eventRow.require_moderation));
 
-    uploader(req, res, (uploadErr) => {
+    uploader(req, res, async (uploadErr) => {
         if (uploadErr) {
             return res.status(400).json({ error: uploadErr.message });
         }
@@ -95,26 +117,45 @@ function performPhotoUpload({ req, res, eventId, eventRow, skipStatusCheck = fal
         }
 
         const initialStatus = eventRow.require_moderation ? 'pending' : 'approved';
-        const stmt = db.prepare(`INSERT INTO photos (event_id, filename, original_name, status) VALUES (?, ?, ?, ?)`);
+
+        let filesWithPreviews;
+        try {
+            filesWithPreviews = await Promise.all(
+                req.files.map(async (file) => {
+                    const storedRelative = req.uploadSubdir ? `${req.uploadSubdir}/${file.filename}` : file.filename;
+                    let previewRelative = null;
+                    try {
+                        previewRelative = await generatePreviewForFile(file, req.uploadSubdir);
+                    } catch (previewErr) {
+                        // Если не удалось создать превью, продолжаем только с оригиналом
+                        previewRelative = null;
+                    }
+                    return { file, storedRelative, previewRelative };
+                })
+            );
+        } catch (err) {
+            return res.status(500).json({ error: err.message || 'Failed to generate previews' });
+        }
+
+        const stmt = db.prepare(`INSERT INTO photos (event_id, filename, original_name, status, preview_filename) VALUES (?, ?, ?, ?, ?)`);
         db.serialize(() => {
-            req.files.forEach(file => {
-                const storedRelative = req.uploadSubdir ? `${req.uploadSubdir}/${file.filename}` : file.filename;
-                stmt.run(eventId, storedRelative, file.originalname, initialStatus);
+            filesWithPreviews.forEach(({ file, storedRelative, previewRelative }) => {
+                stmt.run(eventId, storedRelative, file.originalname, initialStatus, previewRelative);
             });
             stmt.finalize((finalizeErr) => {
                 if (finalizeErr) {
                     return res.status(500).json({ error: finalizeErr.message });
                 }
-                db.run(`UPDATE events SET photo_count = photo_count + ? WHERE id = ?`, [req.files.length, eventId]);
-                const files = req.files.map(file => {
-                    const storedRelative = req.uploadSubdir ? `${req.uploadSubdir}/${file.filename}` : file.filename;
+                db.run(`UPDATE events SET photo_count = photo_count + ? WHERE id = ?`, [filesWithPreviews.length, eventId]);
+                const files = filesWithPreviews.map(({ file, storedRelative, previewRelative }) => {
                     return {
                         id: undefined,
                         event_id: eventId,
                         filename: storedRelative,
                         original_name: file.originalname,
                         status: initialStatus,
-                        url: getFileUrl(req, storedRelative)
+                        url: getFileUrl(req, storedRelative),
+                        preview_url: previewRelative ? getFileUrl(req, previewRelative) : getFileUrl(req, storedRelative)
                     };
                 });
                 res.status(201).json({ uploaded: files });
@@ -172,13 +213,14 @@ router.get('/event/:eventId', (req, res) => {
     const orderClause = sort === 'likes'
         ? `ORDER BY likes DESC, uploaded_at DESC`
         : `ORDER BY uploaded_at DESC`;
-    db.all(`SELECT id, event_id, filename, original_name, status, likes, uploaded_at FROM photos WHERE event_id = ? AND status = 'approved' ${orderClause}`, [eventId], (err, rows) => {
+    db.all(`SELECT id, event_id, filename, original_name, status, likes, uploaded_at, preview_filename FROM photos WHERE event_id = ? AND status = 'approved' ${orderClause}`, [eventId], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
         const withUrls = rows.map(p => ({
             ...p,
-            url: getFileUrl(req, p.filename)
+            url: getFileUrl(req, p.filename),
+            preview_url: p.preview_filename ? getFileUrl(req, p.preview_filename) : getFileUrl(req, p.filename)
         }));
         res.json(withUrls);
     });
@@ -187,13 +229,14 @@ router.get('/event/:eventId', (req, res) => {
 // Recent photos (for live wall)
 router.get('/recent', (req, res) => {
     const limit = parseInt(req.query.limit || '50', 10);
-    db.all(`SELECT id, event_id, filename, original_name, status, likes, uploaded_at FROM photos WHERE status = 'approved' ORDER BY likes DESC, uploaded_at DESC LIMIT ?`, [limit], (err, rows) => {
+    db.all(`SELECT id, event_id, filename, original_name, status, likes, uploaded_at, preview_filename FROM photos WHERE status = 'approved' ORDER BY likes DESC, uploaded_at DESC LIMIT ?`, [limit], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
         const withUrls = rows.map(p => ({
             ...p,
-            url: getFileUrl(req, p.filename)
+            url: getFileUrl(req, p.filename),
+            preview_url: p.preview_filename ? getFileUrl(req, p.preview_filename) : getFileUrl(req, p.filename)
         }));
         res.json(withUrls);
     });
@@ -202,13 +245,14 @@ router.get('/recent', (req, res) => {
 // List pending photos (moderation) for an event [protected]
 router.get('/event/:eventId/pending', auth, (req, res) => {
     const eventId = parseInt(req.params.eventId, 10);
-    db.all(`SELECT id, event_id, filename, original_name, status, likes, uploaded_at FROM photos WHERE event_id = ? AND status = 'pending' ORDER BY uploaded_at DESC`, [eventId], (err, rows) => {
+    db.all(`SELECT id, event_id, filename, original_name, status, likes, uploaded_at, preview_filename FROM photos WHERE event_id = ? AND status = 'pending' ORDER BY uploaded_at DESC`, [eventId], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
         const withUrls = rows.map(p => ({
             ...p,
-            url: getFileUrl(req, p.filename)
+            url: getFileUrl(req, p.filename),
+            preview_url: p.preview_filename ? getFileUrl(req, p.preview_filename) : getFileUrl(req, p.filename)
         }));
         res.json(withUrls);
     });

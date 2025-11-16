@@ -190,23 +190,21 @@ body.has-branding-image {
 .gallery-footer .footer-inner {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     flex-wrap: wrap;
     gap: 12px;
     margin: 0 auto 12px;
 }
-
-.gallery-footer .footer-inner p {
-    margin: 0;
-    font-size: 16px;
-}
+/* Логотип в футере использует общий стиль .app-logo из common.css,
+   чтобы выглядеть как на главной странице */
 
 .gallery-footer .footer-note {
-    margin: 0;
+    margin: 0 auto;
     text-align: center;
     color: rgba(255, 255, 255, 0.7);
     font-size: 14px;
 }
+
 
 .gallery-container {
     position: relative;

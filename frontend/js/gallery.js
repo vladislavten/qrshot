@@ -542,12 +542,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const path = String(u).startsWith('/') ? u : `/${u}`;
                 return `${apiOrigin}${path}`;
             }
-            photos = (Array.isArray(data) ? data : []).map(p => ({ 
-                id: p.id, 
-                url: toAbsoluteUrl(p.url || p.filename), 
-                date: p.uploaded_at,
-                likes: p.likes || 0
-            }));
+            photos = (Array.isArray(data) ? data : []).map(p => {
+                const previewUrl = toAbsoluteUrl(p.preview_url || p.url || p.filename);
+                const originalUrl = toAbsoluteUrl(p.url || p.filename);
+                return {
+                    id: p.id,
+                    url: previewUrl,
+                    originalUrl,
+                    date: p.uploaded_at,
+                    likes: p.likes || 0,
+                    original_name: p.original_name
+                };
+            });
             renderedPhotosCount = 0;
             const currentSort = sortSelect?.value || 'newest';
             sortPhotos(currentSort);
@@ -575,12 +581,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (evt?.scheduled_start_at) {
                     const start = new Date(evt.scheduled_start_at);
                     if (!Number.isNaN(start.getTime())) {
-                        headerDate.textContent = start.toLocaleString('ru-RU', {
+                        // На странице галереи показываем только дату, без времени
+                        headerDate.textContent = start.toLocaleDateString('ru-RU', {
                             day: '2-digit',
                             month: 'long',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
+                            year: 'numeric'
                         });
                     } else if (evt?.date) {
                         headerDate.textContent = new Date(evt.date).toLocaleDateString('ru-RU');
@@ -690,7 +695,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.openPhoto = (index) => {
         currentPhotoIndex = index;
-        modalImage.src = photos[index].url;
+        const photo = photos[index];
+        modalImage.src = photo.originalUrl || photo.url;
         modal.style.display = 'block';
         updateModalLikeDisplay();
         updateShareButtons(photos[index]);
@@ -750,9 +756,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (downloadBtn) {
         downloadBtn.addEventListener('click', () => {
             const photo = photos[currentPhotoIndex];
-            if (!photo?.url) return;
+            const src = photo?.originalUrl || photo?.url;
+            if (!src) return;
             const link = document.createElement('a');
-            link.href = photo.url;
+            link.href = src;
             const filename = photo.original_name || `photo-${photo.id || currentPhotoIndex + 1}.jpg`;
             link.download = filename;
             document.body.appendChild(link);
@@ -1015,7 +1022,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (newIndex !== -1) {
                 if (options.fromModal) {
                     currentPhotoIndex = newIndex;
-                    modalImage.src = photos[currentPhotoIndex].url;
+                    const current = photos[currentPhotoIndex];
+                    modalImage.src = current.originalUrl || current.url;
                     updateModalLikeDisplay();
                 } else if (modal && modal.style.display === 'block' && photos[currentPhotoIndex]?.id === likedPhotoId) {
                     currentPhotoIndex = newIndex;
