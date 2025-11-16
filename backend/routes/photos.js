@@ -337,11 +337,7 @@ router.post('/moderate/reject', auth, (req, res) => {
                 insertDel.run(row.event_id || null, row.id || null, nowIso);
             });
             insertDel.finalize(() => {});
-            // Обновить счётчик удалённых фото в events
-            const byEventEntries = Object.entries(countsByEvent);
-            byEventEntries.forEach(([eventId, count]) => {
-                db.run(`UPDATE events SET deleted_photo_count = COALESCE(deleted_photo_count,0) + ? WHERE id = ?`, [count, eventId]);
-            });
+            // счётчик удалённых фото будет увеличен ниже в агрегирующем UPDATE для каждого события
 
             const entries = Object.entries(countsByEvent);
             if (entries.length === 0) {
@@ -399,9 +395,8 @@ router.delete('/:photoId', auth, (req, res) => {
         db.run(`DELETE FROM photos WHERE id = ?`, [photoId], function(delErr) {
             if (delErr) return res.status(500).json({ error: delErr.message });
             if (row.event_id) {
-                // Логирование удаления
+                // Логирование удаления, увеличение счётчика произойдёт в следующем UPDATE
                 db.run(`INSERT INTO photo_deletions (event_id, photo_id, deleted_at) VALUES (?, ?, datetime('now'))`, [row.event_id, photoId]);
-                db.run(`UPDATE events SET deleted_photo_count = COALESCE(deleted_photo_count,0) + 1 WHERE id = ?`, [row.event_id]);
                 db.run(
                     `UPDATE events 
                      SET photo_count = CASE 

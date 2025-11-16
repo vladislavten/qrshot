@@ -176,10 +176,10 @@ router.post('/', auth, async (req, res) => {
                 
                 const eventId = this.lastID;
                 // Используем hash-параметры, чтобы статические сервера не срезали query
-                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'; //заменить когда буду переходить на боевой режим
+                const frontendUrl = process.env.FRONTEND_URL; // || 'http://localhost:3000'; //заменить когда буду переходить на боевой режим
                 const accessLink = `${frontendUrl}/gallery.html#event=${eventId}&date=${encodeURIComponent(date || '')}`;
                 
-                QRCode.toDataURL(accessLink, (err, qrCode) => {
+                QRCode.toDataURL(accessLink, { width: 1024, margin: 1, color: { dark: '#000000', light: '#ffffff' } }, (err, qrCode) => {
                     const qrValue = err ? '' : qrCode;
                     db.run(
                         `UPDATE events SET qr_code = ?, access_link = ? WHERE id = ?`,
@@ -254,7 +254,7 @@ router.get('/', auth, (req, res) => {
             attachBrandingUrl(req, row);
             // если по какой-то причине ссылка отсутствует — сгенерируем заново (используем обычный id)
             if (!row.access_link) {
-                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+                const frontendUrl = process.env.FRONTEND_URL; // || 'http://localhost:3000';
                 row.access_link = `${frontendUrl}/gallery.html#event=${row.id}&date=${encodeURIComponent(row.date || '')}`;
             }
         });

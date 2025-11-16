@@ -149,6 +149,28 @@
     }
 }
 
+/* Analytics filter */
+.analytics-events-header{
+    display:flex;
+    flex-direction: column;
+    align-items:flex-start;
+    gap:8px;
+    margin-bottom:10px;
+}
+.analytics-filter{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+.analytics-filter select{
+    min-width:200px;
+    padding:6px 10px;
+    border:1px solid rgba(30,60,114,0.2);
+    border-radius:8px;
+    background:#fff;
+    color:#1e3c72;
+}
+
 .users-admin-modal .modal-header {
     display: flex;
     align-items: center;
@@ -869,7 +891,7 @@ body.admin-menu-open {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin: 6px 12px 0 12px;
+    /*margin: 6px 12px 0 12px;*/
     color: #50608a;
     font-weight: 600;
     font-size: 13px;

@@ -1748,18 +1748,33 @@ async function loadEventsOverview() {
         });
         if (!res.ok) return;
         const data = await res.json();
-        if (summaryEl) {
-            const active = Number(data?.totals?.activeCount || 0);
-            const deleted = Number(data?.totals?.deletedCount || 0);
-            summaryEl.innerHTML = `Активных: <b>${active}</b> · Удалённых: <b>${deleted}</b>`;
+
+        // --- Пользовательский фильтр (только для root) ---
+        const filterWrap = document.getElementById('analyticsUserFilterWrap');
+        const filterEl = document.getElementById('analyticsUserFilter');
+        let selectedUser = null;
+        if (filterWrap && filterEl && isRootAdmin()) {
+            filterWrap.style.display = '';
+            const users = new Set();
+            (data?.active || []).forEach(e => { if (e && e.owner_username) users.add(e.owner_username); });
+            (data?.deleted || []).forEach(e => { if (e && e.owner_username) users.add(e.owner_username); });
+            const prev = filterEl.value || 'all';
+            const options = ['all', ...Array.from(users).sort((a,b)=>a.localeCompare(b,'ru'))];
+            filterEl.innerHTML = options.map(v => `<option value="${v}" ${v===prev?'selected':''}>${v==='all'?'Все':v}</option>`).join('');
+            selectedUser = prev === 'all' ? null : prev;
+        } else if (filterWrap) {
+            filterWrap.style.display = 'none';
         }
+
         if (bodyEl) {
             const items = [];
             (data?.active || []).forEach(ev => {
+                if (selectedUser && ev?.owner_username !== selectedUser) return;
                 const ts = ev.created_at ? Date.parse(ev.created_at) : 0;
                 items.push({ kind: 'active', ts: Number.isNaN(ts) ? 0 : ts, ev });
             });
             (data?.deleted || []).forEach(ev => {
+                if (selectedUser && ev?.owner_username !== selectedUser) return;
                 const ts = ev.deleted_at ? Date.parse(ev.deleted_at) : 0;
                 items.push({ kind: 'deleted', ts: Number.isNaN(ts) ? 0 : ts, ev });
             });
@@ -1795,6 +1810,13 @@ async function loadEventsOverview() {
                 `;
             }).join('');
 
+            // Обновляем счётчики с учётом фильтра
+            if (summaryEl) {
+                const aCnt = (data?.active || []).filter(e => !selectedUser || e.owner_username === selectedUser).length;
+                const dCnt = (data?.deleted || []).filter(e => !selectedUser || e.owner_username === selectedUser).length;
+                summaryEl.innerHTML = `Активных: <b>${aCnt}</b> · Удалённых: <b>${dCnt}</b>`;
+            }
+
             // Привязка удаления с подтверждением (однократно, без накапливания обработчиков)
             const delModal = document.getElementById('analyticsDeleteModal');
             const delText = document.getElementById('analyticsDeleteText');
@@ -1802,29 +1824,6 @@ async function loadEventsOverview() {
             const delConfirm = document.getElementById('analyticsDeleteConfirm');
             let delTarget = null;
 
-            const openDelModal = (kind, id, titleText) => {
-                delTarget = { kind, id };
-                if (delText) {
-                    delText.textContent = titleText || (kind === 'active'
-                        ? 'Удалить мероприятие и все его данные?'
-                        : 'Удалить запись из истории удалённых мероприятий?');
-                }
-                if (delModal) {
-                    delModal.style.display = 'flex';
-                    delModal.setAttribute('aria-hidden', 'false');
-                    document.body.classList.add('modal-open');
-                }
-            };
-            const closeDel = () => {
-                if (delModal) {
-                    delModal.style.display = 'none';
-                    delModal.setAttribute('aria-hidden', 'true');
-                    document.body.classList.remove('modal-open');
-                }
-                delTarget = null;
-            };
-
-            // Делегирование на таблицу, чтобы не навешивать обработчики на каждую перерисовку
             bodyEl.onclick = (e) => {
                 const btn = e.target.closest('[data-ev-del]');
                 if (!btn || !bodyEl.contains(btn)) return;
@@ -1833,26 +1832,37 @@ async function loadEventsOverview() {
                 const row = btn.closest('tr');
                 const name = row ? row.children[1]?.textContent?.trim() : '';
                 if (kind !== 'deleted') return;
-                openDelModal(kind, id, `Удалить запись «${name}» из истории удалённых мероприятий?`);
+                delTarget = { kind, id };
+                if (delText) delText.textContent = `Удалить запись «${name}» из истории удалённых мероприятий?`;
+                if (delModal) {
+                    delModal.style.display = 'flex';
+                    delModal.setAttribute('aria-hidden', 'false');
+                    document.body.classList.add('modal-open');
+                }
             };
 
+            const closeDel = () => {
+                if (delModal) {
+                    delModal.style.display = 'none';
+                    delModal.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('modal-open');
+                }
+                delTarget = null;
+            };
             if (delCancel) delCancel.onclick = closeDel;
             if (delModal) {
-                delModal.onclick = (e) => {
-                    if (e.target === delModal) closeDel();
-                };
+                delModal.onclick = (e) => { if (e.target === delModal) closeDel(); };
             }
             if (delConfirm) {
                 delConfirm.onclick = async () => {
                     if (!delTarget) return;
                     try {
-                        const token = await ensureAdminToken();
+                        const token2 = await ensureAdminToken();
                         const url = `${API_CONFIG.baseUrl}/analytics/events/${encodeURIComponent(delTarget.id)}/audit`;
-                        const method = 'DELETE';
-                        const res = await fetch(url, { method, headers: { 'Authorization': `Bearer ${token}` } });
-                        const data = await res.json().catch(() => ({}));
-                        if (!res.ok) {
-                            showNotification(data?.error || 'Ошибка удаления', 'error');
+                        const res2 = await fetch(url, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token2}` } });
+                        const d2 = await res2.json().catch(() => ({}));
+                        if (!res2.ok) {
+                            showNotification(d2?.error || 'Ошибка удаления', 'error');
                             return;
                         }
                         showNotification('Удалено', 'success');
@@ -1868,6 +1878,13 @@ async function loadEventsOverview() {
         // ignore
     }
 }
+
+// Перезагрузка аналитики при смене фильтра пользователя
+document.addEventListener('change', (e) => {
+    if (e.target && e.target.id === 'analyticsUserFilter') {
+        loadEventsOverview();
+    }
+});
 
 function setupModeration(events) {
     const moderationContainer = document.querySelector('.moderation-grid');

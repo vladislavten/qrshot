@@ -189,15 +189,32 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Обработчик скачивания QR-кода
     document.getElementById('downloadQR').addEventListener('click', () => {
-        const dataUrl = document.getElementById('qrcode').dataset.qrDataUrl
-            || document.querySelector('#qrcode canvas')?.toDataURL();
-        if (!dataUrl) return;
+        const src = document.getElementById('qrcode').dataset.qrDataUrl
+            || document.querySelector('#qrcode canvas')?.toDataURL('image/png');
+        if (!src) return;
         const safeName = (eventData?.name || '').toString().replace(/[^a-zA-Z0-9_\-]+/g, '_');
         const filename = `qr-event-${eventId || 'unknown'}${safeName ? '-' + safeName : ''}.png`;
-        const link = document.createElement('a');
-        link.download = filename;
-        link.href = dataUrl;
-        link.click();
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const size = 1024;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            // белый фон, чтобы PNG не был прозрачным
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, size, size);
+            // Растянуть исходный QR до 1024x1024
+            ctx.drawImage(img, 0, 0, size, size);
+            const out = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = out;
+            link.click();
+        };
+        img.src = src;
     });
     
     // Обработчик печати

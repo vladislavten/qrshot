@@ -123,7 +123,13 @@
                     </div>
                 </div>
                 <div class="analytics-events" id="eventsAnalyticsBlock">
-                    <h3>Созданные и удалённые мероприятия</h3>
+                    <div class="analytics-events-header">
+                        <h3>Созданные и удалённые мероприятия</h3>
+                        <div class="analytics-filter" id="analyticsUserFilterWrap" style="display:none">
+                            <label for="analyticsUserFilter">Пользователь:</label>
+                            <select id="analyticsUserFilter"></select>
+                        </div>
+                    </div>
                     <div id="eventsAnalyticsSummary" class="stat-row"></div>
                     <div class="events-analytics-table">
                             <table>
