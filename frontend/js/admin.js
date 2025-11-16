@@ -52,6 +52,112 @@ function revokeBrandingPreviewUrl() {
     }
 }
 
+// ===== Управление пользователями (только root) =====
+async function loadUsers() {
+    if (!isRootAdmin()) return;
+    try {
+        const token = await ensureAdminToken();
+        const res = await fetch(`${API_CONFIG.baseUrl}/users`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const users = await res.json();
+        renderUsers(users || []);
+    } catch (_) {}
+}
+
+function renderUsers(users) {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = (users || []).map(u => `
+        <tr>
+            <td>${u.id}</td>
+            <td>${escapeHtml(u.username)}</td>
+            <td>${escapeHtml(u.displayName || '')}</td>
+            <td>${u.role}</td>
+            <td>
+                <button class="btn-small" data-user-edit-name="${u.id}"><i class="fas fa-pen"></i> Имя</button>
+                <button class="btn-small" data-user-edit-pass="${u.id}"><i class="fas fa-key"></i> Пароль</button>
+            </td>
+        </tr>
+    `).join('');
+
+    tbody.querySelectorAll('[data-user-edit-name]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.getAttribute('data-user-edit-name');
+            const newName = prompt('Новое имя пользователя:');
+            if (newName === null) return;
+            await updateUser(id, { displayName: newName });
+            await loadUsers();
+        });
+    });
+    tbody.querySelectorAll('[data-user-edit-pass]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.getAttribute('data-user-edit-pass');
+            const newPass = prompt('Новый пароль:');
+            if (!newPass) return;
+            await updateUser(id, { password: newPass });
+            showNotification('Пароль обновлён', 'success');
+        });
+    });
+}
+
+async function updateUser(id, payload) {
+    try {
+        const token = await ensureAdminToken();
+        await fetch(`${API_CONFIG.baseUrl}/users/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(payload)
+        });
+    } catch (_) {}
+}
+
+function setupUsersAdmin() {
+    const nav = document.getElementById('usersTabNav');
+    const section = document.getElementById('users-tab');
+    if (isRootAdmin()) {
+        if (nav) nav.style.display = '';
+        if (section) section.style.display = '';
+        const form = document.getElementById('createUserForm');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fd = new FormData(form);
+                const username = fd.get('username');
+                const displayName = fd.get('displayName');
+                const password = fd.get('password');
+                if (!username || !password) {
+                    showNotification('Логин и пароль обязательны', 'error');
+                    return;
+                }
+                try {
+                    const token = await ensureAdminToken();
+                    const res = await fetch(`${API_CONFIG.baseUrl}/users`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ username, displayName, password })
+                    });
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        showNotification(data?.error || 'Ошибка создания пользователя', 'error');
+                        return;
+                    }
+                    form.reset();
+                    showNotification('Пользователь создан', 'success');
+                    await loadUsers();
+                } catch (e) {
+                    showNotification('Ошибка сервера', 'error');
+                }
+            });
+        }
+        loadUsers();
+    } else {
+        if (nav) nav.remove();
+        if (section) section.remove();
+    }
+}
+
 function setBrandingPreview(form, url) {
     const preview = form?.querySelector('[data-branding-preview]');
     const image = form?.querySelector('[data-branding-preview-image]');
@@ -508,6 +614,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         handleScrollSpy();
     }
 
+    // Инициализация управления пользователями (для root)
+    setupUsersAdmin();
+
     // Обработка модальных окон
     const createEventButtons = Array.from(document.querySelectorAll('.create-event-btn'));
     const createEventModal = document.getElementById('createEventModal');
@@ -835,6 +944,12 @@ function decodeJwtPayload(token) {
     }
 }
 
+function isRootAdmin() {
+    const token = getAdminToken();
+    const payload = token ? decodeJwtPayload(token) : null;
+    return Boolean(payload && payload.role === 'root');
+}
+
 function markActivity() {
     lastActivityTimestamp = Date.now();
     if (!sessionModalShown && getAdminToken()) {
@@ -1129,7 +1244,10 @@ function showNotification(message, type = 'success') {
 // Загрузка событий
 async function loadEvents() {
     try {
-        const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.events}`);
+        const token = await ensureAdminToken();
+        const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.events}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         const events = await response.json();
         renderEvents(events);
         setupModeration(cachedEvents);
@@ -1302,7 +1420,7 @@ async function fetchActiveUsersCounts() {
     try {
         const [activeUsersRes, eventsRes] = await Promise.all([
             fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.events}/active-users`, { headers }),
-            fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.events}`)
+            fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.events}`, { headers })
         ]);
 
         if (activeUsersRes.status === 401 || eventsRes.status === 401) {

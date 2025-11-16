@@ -148,12 +148,17 @@ router.post('/admin/:eventId/preupload', auth, (req, res) => {
         return res.status(400).json({ error: 'Invalid event id' });
     }
 
-    db.get(`SELECT name, require_moderation, status FROM events WHERE id = ?`, [eventId], (err, eventRow) => {
+    db.get(`SELECT id, name, require_moderation, status, owner_id FROM events WHERE id = ?`, [eventId], (err, eventRow) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
         if (!eventRow) {
             return res.status(404).json({ error: 'Event not found' });
+        }
+
+        const isRoot = req.user && req.user.role === 'root';
+        if (!isRoot && eventRow.owner_id !== req.user.userId) {
+            return res.status(403).json({ error: 'Forbidden' });
         }
 
         performPhotoUpload({ req, res, eventId, eventRow, skipStatusCheck: true });
@@ -210,8 +215,22 @@ router.get('/event/:eventId/pending', auth, (req, res) => {
 });
 
 // Pending photos count overview [protected]
-router.get('/pending/count', auth, (_req, res) => {
-    db.all(`SELECT event_id, COUNT(*) as total FROM photos WHERE status = 'pending' GROUP BY event_id`, [], (err, rows) => {
+router.get('/pending/count', auth, (req, res) => {
+    const isRoot = req.user && req.user.role === 'root';
+    const params = [];
+    let sql = `
+        SELECT p.event_id AS event_id, COUNT(*) AS total
+        FROM photos p
+        JOIN events e ON e.id = p.event_id
+        WHERE p.status = 'pending'
+    `;
+    if (!isRoot) {
+        sql += ` AND e.owner_id = ?`;
+        params.push(req.user.userId);
+    }
+    sql += ` GROUP BY p.event_id`;
+
+    db.all(sql, params, (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }

@@ -1,7 +1,9 @@
 const router = require('express').Router();
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const db = require('../db/database');
 
-const SECRET = process.env.JWT_SECRET;
+const SECRET = process.env.JWT_SECRET || 'dev_secret';
 
 function normalizeExpiresIn(value, fallback = '12h') {
     if (!value || typeof value !== 'string') {
@@ -61,16 +63,38 @@ function signToken(payload) {
     }
 }
 
-// Simple login with env credentials
+// Login for root (env) and DB users
 router.post('/login', (req, res) => {
     const { username, password } = req.body || {};
     const adminUser = process.env.ADMIN_USER || 'admin';
     const adminPass = process.env.ADMIN_PASS || 'admin';
+
+    // Root admin via .env (not stored in DB)
     if (username === adminUser && password === adminPass) {
-        const token = signToken({ role: 'admin', username });
+        const token = signToken({ role: 'root', username, userId: 1 });
         return res.json({ token });
     }
-    return res.status(401).json({ message: 'Invalid credentials' });
+
+    // Regular users from DB
+    db.get(`SELECT id, username, password_hash, role, display_name FROM users WHERE username = ?`, [username], async (err, row) => {
+        if (err) {
+            return res.status(500).json({ message: 'DB error' });
+        }
+        if (!row) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+        try {
+            const ok = await bcrypt.compare(String(password), row.password_hash);
+            if (!ok) {
+                return res.status(401).json({ message: 'Invalid credentials' });
+            }
+            const role = row.role || 'admin';
+            const token = signToken({ role, username: row.username, userId: row.id, name: row.display_name || row.username });
+            return res.json({ token });
+        } catch (e) {
+            return res.status(500).json({ message: 'Auth error' });
+        }
+    });
 });
 
 router.post('/refresh', (req, res) => {
@@ -82,7 +106,13 @@ router.post('/refresh', (req, res) => {
     const token = authHeader.replace('Bearer ', '');
     try {
         const decoded = jwt.verify(token, SECRET);
-        const freshToken = signToken({ role: decoded.role, username: decoded.username });
+        const payload = {
+            role: decoded.role,
+            username: decoded.username,
+            userId: decoded.userId,
+            name: decoded.name
+        };
+        const freshToken = signToken(payload);
         return res.json({ token: freshToken });
     } catch (error) {
         return res.status(401).json({ message: 'Authentication required' });

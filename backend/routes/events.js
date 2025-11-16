@@ -161,9 +161,10 @@ router.post('/', auth, async (req, res) => {
     const autoEndAt = null;
     
     try {
+        const ownerId = req.user && req.user.userId ? req.user.userId : null;
         db.run(
-            `INSERT INTO events (name, date, description, branding_color, scheduled_start_at, auto_end_at) VALUES (?, ?, ?, ?, ?, ?)`,
-            [name, date, description, defaultBrandingColor, scheduledStartAt, autoEndAt],
+            `INSERT INTO events (name, date, description, branding_color, scheduled_start_at, auto_end_at, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [name, date, description, defaultBrandingColor, scheduledStartAt, autoEndAt, ownerId],
             function(err) {
                 if (err) {
                     return res.status(400).json({ error: err.message });
@@ -207,9 +208,17 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
-// Получение всех событий
-router.get('/', (req, res) => {
-    db.all(`SELECT * FROM events ORDER BY created_at DESC`, [], (err, rows) => {
+// Получение всех событий (требует авторизации; обычный пользователь видит только свои)
+router.get('/', auth, (req, res) => {
+    const isRoot = req.user && req.user.role === 'root';
+    const params = [];
+    let sql = `SELECT * FROM events`;
+    if (!isRoot) {
+        sql += ` WHERE owner_id = ?`;
+        params.push(req.user.userId);
+    }
+    sql += ` ORDER BY created_at DESC`;
+    db.all(sql, params, (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -256,12 +265,16 @@ router.post('/:id/status', auth, (req, res) => {
         return res.status(400).json({ error: 'Недопустимый статус мероприятия' });
     }
 
-    db.get(`SELECT id, name, status, scheduled_start_at, auto_end_at FROM events WHERE id = ?`, [eventId], (err, row) => {
+    db.get(`SELECT id, name, status, scheduled_start_at, auto_end_at, owner_id FROM events WHERE id = ?`, [eventId], (err, row) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
         if (!row) {
             return res.status(404).json({ error: 'Событие не найдено' });
+        }
+        const isRoot = req.user && req.user.role === 'root';
+        if (!isRoot && row.owner_id !== req.user.userId) {
+            return res.status(403).json({ error: 'Forbidden' });
         }
 
         const currentStatus = normalizeEventStatus(row.status);
@@ -330,9 +343,13 @@ router.post('/:id/branding/background', auth, (req, res) => {
     if (!eventId) {
         return res.status(400).json({ error: 'Invalid event id' });
     }
-    db.get(`SELECT id, name, branding_background FROM events WHERE id = ?`, [eventId], (err, eventRow) => {
+    db.get(`SELECT id, name, branding_background, owner_id FROM events WHERE id = ?`, [eventId], (err, eventRow) => {
         if (err) return res.status(500).json({ error: err.message });
         if (!eventRow) return res.status(404).json({ error: 'Событие не найдено' });
+        const isRoot = req.user && req.user.role === 'root';
+        if (!isRoot && eventRow.owner_id !== req.user.userId) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
 
         const { destPath, posixDir } = buildBackgroundPaths(eventRow.id, eventRow.name);
         const storage = multer.diskStorage({
@@ -406,6 +423,10 @@ router.put('/:id', auth, (req, res) => {
     db.get(`SELECT * FROM events WHERE id = ?`, [eventId], (selectErr, existingRow) => {
         if (selectErr) return res.status(500).json({ error: selectErr.message });
         if (!existingRow) return res.status(404).json({ error: 'Событие не найдено' });
+        const isRoot = req.user && req.user.role === 'root';
+        if (!isRoot && existingRow.owner_id !== req.user.userId) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
 
         const body = req.body || {};
         const name = body.name || '';
@@ -488,8 +509,13 @@ router.delete('/:id', auth, (req, res) => {
     if (!eventId) return res.status(400).json({ error: 'Invalid event id' });
 
     db.serialize(() => {
-        db.get(`SELECT branding_background FROM events WHERE id = ?`, [eventId], (brandingErr, brandingRow) => {
+        db.get(`SELECT branding_background, owner_id FROM events WHERE id = ?`, [eventId], (brandingErr, brandingRow) => {
             if (brandingErr) return res.status(500).json({ error: brandingErr.message });
+            if (!brandingRow) return res.status(404).json({ error: 'Событие не найдено' });
+            const isRoot = req.user && req.user.role === 'root';
+            if (!isRoot && brandingRow.owner_id !== req.user.userId) {
+                return res.status(403).json({ error: 'Forbidden' });
+            }
 
             db.all(`SELECT filename FROM photos WHERE event_id = ?`, [eventId], (selectErr, rows) => {
                 if (selectErr) return res.status(500).json({ error: selectErr.message });
@@ -518,7 +544,7 @@ router.delete('/:id', auth, (req, res) => {
                         if (this.changes === 0) return res.status(404).json({ error: 'Событие не найдено' });
                         activeUsers.delete(String(eventId));
                         dirsToRemove.forEach(dir => {
-                            if (dir && path.resolve(dir) !== uploadsDir) {
+            if (dir && path.resolve(dir) !== uploadsDir) {
                                 fs.rm(dir, { recursive: true, force: true }, () => {});
                             }
                         });

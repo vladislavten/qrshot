@@ -1,11 +1,23 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 const dbPath = path.resolve(__dirname, 'qr_photoshare.db');
 const db = new sqlite3.Database(dbPath);
 
 // Инициализация таблиц
 db.serialize(() => {
+    // Таблица пользователей
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        display_name TEXT,
+        role TEXT NOT NULL DEFAULT 'admin',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)`);
+
     // Таблица событий
     db.run(`CREATE TABLE IF NOT EXISTS events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,6 +38,7 @@ db.serialize(() => {
         status TEXT DEFAULT 'scheduled',
         scheduled_start_at TEXT,
         auto_end_at TEXT,
+        owner_id INTEGER,
         visitor_count INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
@@ -38,6 +51,7 @@ db.serialize(() => {
     db.run(`ALTER TABLE events ADD COLUMN status TEXT DEFAULT 'scheduled'`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN scheduled_start_at TEXT`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN auto_end_at TEXT`, () => {});
+    db.run(`ALTER TABLE events ADD COLUMN owner_id INTEGER`, () => {});
 
     // Таблица фотографий
     db.run(`CREATE TABLE IF NOT EXISTS photos (
@@ -54,6 +68,23 @@ db.serialize(() => {
     // Добавляем колонку likes, если база уже была создана
     db.run(`ALTER TABLE photos ADD COLUMN likes INTEGER DEFAULT 0`, (err) => {
         // Игнорируем ошибку при существующей колонке
+    });
+});
+
+// Создание root-пользователя на основе переменных окружения (если не существует)
+db.serialize(() => {
+    const rootUser = process.env.ADMIN_USER || 'admin';
+    const rootPass = process.env.ADMIN_PASS || 'admin';
+    db.get(`SELECT id FROM users WHERE username = ?`, [rootUser], (err, row) => {
+        if (err) return;
+        if (!row) {
+            const hash = bcrypt.hashSync(String(rootPass), 10);
+            db.run(
+                `INSERT INTO users (username, password_hash, display_name, role) VALUES (?, ?, ?, 'root')`,
+                [rootUser, hash, 'Root Administrator'],
+                function(insertErr){ /* ignore */ }
+            );
+        }
     });
 });
 
