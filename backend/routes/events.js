@@ -193,7 +193,7 @@ router.post('/', auth, async (req, res) => {
                                 date,
                                 description,
                                 qrCode,
-                                accessLink,
+                                access_link: accessLink,
                                 status: 'scheduled',
                                 scheduled_start_at: scheduledStartAt,
                                 auto_end_at: autoEndAt
@@ -212,12 +212,26 @@ router.post('/', auth, async (req, res) => {
 router.get('/', auth, (req, res) => {
     const isRoot = req.user && req.user.role === 'root';
     const params = [];
-    let sql = `SELECT * FROM events`;
-    if (!isRoot) {
-        sql += ` WHERE owner_id = ?`;
+    let sql;
+    if (isRoot) {
+        sql = `
+            SELECT e.*,
+                   u.username AS owner_username,
+                   u.display_name AS owner_display_name
+            FROM events e
+            LEFT JOIN users u ON u.id = e.owner_id
+            ORDER BY e.created_at DESC
+        `;
+    } else {
+        sql = `
+            SELECT e.*
+            FROM events e
+            WHERE e.owner_id = ?
+            ORDER BY e.created_at DESC
+        `;
         params.push(req.user.userId);
     }
-    sql += ` ORDER BY created_at DESC`;
+
     db.all(sql, params, (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
@@ -226,6 +240,12 @@ router.get('/', auth, (req, res) => {
         (rows || []).forEach(row => {
             row.active_users = cleanupInactiveUsers(row.id, now);
             attachBrandingUrl(req, row);
+            // если по какой-то причине ссылка отсутствует — сгенерируем заново
+            if (!row.access_link) {
+                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+                const et = signEventToken(row.id);
+                row.access_link = `${frontendUrl}/gallery.html#et=${encodeURIComponent(et)}&date=${encodeURIComponent(row.date || '')}`;
+            }
         });
         res.json((rows || []).map(row => ({
             ...row,
@@ -337,6 +357,8 @@ router.post('/:id/status', auth, (req, res) => {
         });
     });
 });
+
+// (Удалены маршруты share/resolve; возвращаемся к id в ссылке)
 
 router.post('/:id/branding/background', auth, (req, res) => {
     const eventId = parseInt(req.params.id, 10);

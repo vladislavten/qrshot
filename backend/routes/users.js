@@ -8,9 +8,10 @@ function requireRoot(req, res, next) {
   return res.status(403).json({ error: 'Forbidden' });
 }
 
-// List users (root only)
+// List users (root only) — hide root admin from the list
 router.get('/', auth, requireRoot, (req, res) => {
-  db.all(`SELECT id, username, display_name AS displayName, role, created_at AS createdAt FROM users ORDER BY id ASC`, [], (err, rows) => {
+  const rootUser = process.env.ADMIN_USER || 'admin';
+  db.all(`SELECT id, username, display_name AS displayName, role, created_at AS createdAt FROM users WHERE username <> ? ORDER BY id ASC`, [rootUser], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows || []);
   });

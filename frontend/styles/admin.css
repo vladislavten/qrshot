@@ -91,6 +91,79 @@
     margin-top: 16px;
 }
 
+.users-admin-modal {
+    width: min(1000px, 94%);
+    max-height: 86vh;
+    overflow: auto;
+    padding: 20px;
+    border-radius: 20px;
+    background: linear-gradient(152deg, rgba(255,255,255,0.98) 0%, rgba(242,245,255,0.94) 100%);
+    box-shadow: 0 24px 58px rgba(15, 30, 60, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.create-user-modal {
+    width: min(560px, 92%);
+}
+
+/* Вертикальная симметричная форма в модалке создания пользователя */
+.create-user-modal .user-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 8px;
+}
+.create-user-modal .user-form .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+.create-user-modal .user-form label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e3c72;
+}
+.create-user-modal .user-form input[type="text"],
+.create-user-modal .user-form input[type="password"] {
+    height: 42px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(30,60,114,0.15);
+    background: rgba(255,255,255,0.95);
+    color: #1e3c72;
+    box-sizing: border-box;
+}
+.create-user-modal .user-form button {
+    align-self: center;
+    min-width: 220px;
+    margin-top: 6px;
+}
+
+/* Mobile safe margins for modals */
+@media (max-width: 600px) {
+    .modal .modal-content {
+        margin-left: 10px;
+        margin-right: 10px;
+        width: calc(100% - 20px);
+    }
+}
+
+.users-admin-modal .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.users-admin-modal .modal-close {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #4b5a7a;
+}
+
 .users-toolbar {
     padding: 20px;
     border-radius: 16px;
@@ -664,6 +737,18 @@ body.admin-menu-open {
     background: rgba(90, 102, 124, 0.17);
     color: #4d5669;
 }
+
+/* Owner line (root only) */
+.event-owner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 12px 0 12px;
+    color: #50608a;
+    font-weight: 600;
+    font-size: 13px;
+}
+.event-owner i { color: #2a5298; }
 
 @keyframes liveStatusPulse {
     0%, 100% {

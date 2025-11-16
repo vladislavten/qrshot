@@ -69,18 +69,23 @@ async function loadUsers() {
 function renderUsers(users) {
     const tbody = document.getElementById('usersTableBody');
     if (!tbody) return;
-    tbody.innerHTML = (users || []).map(u => `
+    tbody.innerHTML = (users || []).map(u => {
+        const roleLabel = (String(u.role || '').toLowerCase() === 'admin')
+            ? 'Пользователь'
+            : (String(u.role || '').toLowerCase() === 'root' ? 'Администратор' : (u.role || ''));
+        return `
         <tr>
             <td>${u.id}</td>
             <td>${escapeHtml(u.username)}</td>
             <td>${escapeHtml(u.displayName || '')}</td>
-            <td>${u.role}</td>
+            <td>${roleLabel}</td>
             <td>
                 <button class="btn-small" data-user-edit-name="${u.id}"><i class="fas fa-pen"></i> Имя</button>
                 <button class="btn-small" data-user-edit-pass="${u.id}"><i class="fas fa-key"></i> Пароль</button>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 
     tbody.querySelectorAll('[data-user-edit-name]').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -119,6 +124,32 @@ function setupUsersAdmin() {
     if (isRootAdmin()) {
         if (nav) nav.style.display = '';
         if (section) section.style.display = '';
+
+        const openBtn = document.getElementById('openCreateUserBtn');
+        const createUserModal = document.getElementById('createUserModal');
+        const closeCreateBtn = createUserModal?.querySelector('[data-close-create-user]');
+        if (openBtn && createUserModal) {
+            openBtn.addEventListener('click', () => {
+                createUserModal.style.display = 'flex';
+                createUserModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('modal-open');
+            });
+        }
+        if (closeCreateBtn && createUserModal) {
+            closeCreateBtn.addEventListener('click', () => {
+                createUserModal.style.display = 'none';
+                createUserModal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('modal-open');
+            });
+            createUserModal.addEventListener('click', (e) => {
+                if (e.target === createUserModal) {
+                    createUserModal.style.display = 'none';
+                    createUserModal.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('modal-open');
+                }
+            });
+        }
+
         const form = document.getElementById('createUserForm');
         if (form) {
             form.addEventListener('submit', async (e) => {
@@ -127,8 +158,13 @@ function setupUsersAdmin() {
                 const username = fd.get('username');
                 const displayName = fd.get('displayName');
                 const password = fd.get('password');
+                const passwordConfirm = fd.get('passwordConfirm');
                 if (!username || !password) {
                     showNotification('Логин и пароль обязательны', 'error');
+                    return;
+                }
+                if (String(password) !== String(passwordConfirm)) {
+                    showNotification('Пароли не совпадают', 'error');
                     return;
                 }
                 try {
@@ -145,6 +181,11 @@ function setupUsersAdmin() {
                     }
                     form.reset();
                     showNotification('Пользователь создан', 'success');
+                    if (createUserModal) {
+                        createUserModal.style.display = 'none';
+                        createUserModal.setAttribute('aria-hidden', 'true');
+                        document.body.classList.remove('modal-open');
+                    }
                     await loadUsers();
                 } catch (e) {
                     showNotification('Ошибка сервера', 'error');
@@ -1288,6 +1329,13 @@ function renderEvents(events) {
         const startMeta = EVENT_ACTION_META.live;
         const pauseMeta = EVENT_ACTION_META.paused;
         const stopMeta = EVENT_ACTION_META.ended;
+        const ownerMarkup = isRootAdmin()
+            ? (() => {
+                const name = event.owner_display_name || event.owner_username;
+                if (!name) return '';
+                return `<div class="event-owner"><i class="fas fa-user"></i> <span>${escapeHtml(name)}</span></div>`;
+              })()
+            : '';
 
         return `
         <div class="event-card" data-event-id="${event.id}" data-event-status="${event.status}">
@@ -1298,6 +1346,7 @@ function renderEvents(events) {
                 </div>
                 <span class="${statusInfo.badgeClass}">${statusInfo.label}</span>
             </div>
+            ${ownerMarkup}
             <div class="event-stats">
                 <div class="event-stats-item"><i class="fas fa-image"></i> ${event.photo_count || 0} фото</div>
                 <div class="event-stats-item"><i class="fas fa-heart"></i> ${event.like_count || 0} лайков</div>

@@ -472,5 +472,3 @@ router.get('/event/:eventId/download', (req, res) => {
 });
 
 module.exports = router;
-
-

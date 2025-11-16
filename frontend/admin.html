@@ -129,21 +129,7 @@
                 <h2><i class="fas fa-users-cog"></i> Управление пользователями</h2>
                 <div class="users-admin">
                     <div class="users-toolbar">
-                        <form id="createUserForm" class="user-form">
-                            <div class="form-row">
-                                <label>Логин</label>
-                                <input type="text" name="username" placeholder="username" required>
-                            </div>
-                            <div class="form-row">
-                                <label>Имя</label>
-                                <input type="text" name="displayName" placeholder="Имя пользователя">
-                            </div>
-                            <div class="form-row">
-                                <label>Пароль</label>
-                                <input type="password" name="password" placeholder="Пароль" required>
-                            </div>
-                            <button type="submit" class="btn-primary"><i class="fas fa-user-plus"></i> Создать пользователя</button>
-                        </form>
+                        <button id="openCreateUserBtn" class="btn-primary"><i class="fas fa-user-plus"></i> Создать пользователя</button>
                     </div>
                     <div class="users-list">
                         <table class="users-table">
@@ -161,6 +147,35 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Модальное окно создания пользователя -->
+            <div class="modal" id="createUserModal" aria-hidden="true" role="dialog" aria-modal="true" style="display:none">
+                <div class="modal-content users-admin-modal create-user-modal">
+                    <div class="modal-header">
+                        <h2><i class="fas fa-user-plus"></i> Создать пользователя</h2>
+                        <button type="button" class="modal-close" data-close-create-user>&times;</button>
+                    </div>
+                    <form id="createUserForm" class="user-form" autocomplete="off">
+                        <div class="form-row">
+                            <label>Логин</label>
+                            <input type="text" name="username" placeholder="username" required autocomplete="off" autocapitalize="none" spellcheck="false">
+                        </div>
+                        <div class="form-row">
+                            <label>Имя</label>
+                            <input type="text" name="displayName" placeholder="Имя пользователя" autocomplete="off" spellcheck="false">
+                        </div>
+                        <div class="form-row">
+                            <label>Пароль</label>
+                            <input type="password" name="password" placeholder="Пароль" required autocomplete="new-password">
+                        </div>
+                        <div class="form-row">
+                            <label>Подтвердите пароль</label>
+                            <input type="password" name="passwordConfirm" placeholder="Повторите пароль" required autocomplete="new-password">
+                        </div>
+                        <button type="submit" class="btn-primary"><i class="fas fa-check"></i> Создать</button>
+                    </form>
+                </div>
+            </div>
         </main>
     </div>
 
