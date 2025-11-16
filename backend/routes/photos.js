@@ -330,6 +330,19 @@ router.post('/moderate/reject', auth, (req, res) => {
 
             const deletedCount = this.changes;
 
+            // Логируем удаление фото и увеличиваем счётчик у события
+            const nowIso = new Date().toISOString();
+            const insertDel = db.prepare(`INSERT INTO photo_deletions (event_id, photo_id, deleted_at) VALUES (?, ?, ?)`);
+            rows.forEach(row => {
+                insertDel.run(row.event_id || null, row.id || null, nowIso);
+            });
+            insertDel.finalize(() => {});
+            // Обновить счётчик удалённых фото в events
+            const byEventEntries = Object.entries(countsByEvent);
+            byEventEntries.forEach(([eventId, count]) => {
+                db.run(`UPDATE events SET deleted_photo_count = COALESCE(deleted_photo_count,0) + ? WHERE id = ?`, [count, eventId]);
+            });
+
             const entries = Object.entries(countsByEvent);
             if (entries.length === 0) {
                 return res.json({ deleted: deletedCount });
@@ -350,8 +363,9 @@ router.post('/moderate/reject', auth, (req, res) => {
                         WHEN like_count >= ? THEN like_count - ? 
                         ELSE 0 
                      END
+                     , deleted_photo_count = deleted_photo_count + ?
                      WHERE id = ?`,
-                    [count, count, likeReduction, likeReduction, eventId],
+                    [count, count, likeReduction, likeReduction, count, eventId],
                     (updateErr) => {
                         if (responded) return;
                         if (updateErr) {
@@ -385,6 +399,9 @@ router.delete('/:photoId', auth, (req, res) => {
         db.run(`DELETE FROM photos WHERE id = ?`, [photoId], function(delErr) {
             if (delErr) return res.status(500).json({ error: delErr.message });
             if (row.event_id) {
+                // Логирование удаления
+                db.run(`INSERT INTO photo_deletions (event_id, photo_id, deleted_at) VALUES (?, ?, datetime('now'))`, [row.event_id, photoId]);
+                db.run(`UPDATE events SET deleted_photo_count = COALESCE(deleted_photo_count,0) + 1 WHERE id = ?`, [row.event_id]);
                 db.run(
                     `UPDATE events 
                      SET photo_count = CASE 
@@ -395,6 +412,7 @@ router.delete('/:photoId', auth, (req, res) => {
                         WHEN like_count >= ? THEN like_count - ? 
                         ELSE 0 
                      END
+                     , deleted_photo_count = deleted_photo_count + 1
                      WHERE id = ?`,
                     [row.likes || 0, row.likes || 0, row.event_id],
                     (updateErr) => {

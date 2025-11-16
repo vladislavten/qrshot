@@ -131,7 +131,11 @@ function canTransitionStatus(current, next) {
 function combineDateAndTime(dateStr, timeStr) {
     if (!dateStr) return null;
     const safeDate = String(dateStr).trim();
-    const safeTime = String(timeStr ?? '').trim();
+    let safeTime = String(timeStr ?? '').trim();
+    // нормализуем возможные пробелы в выражении времени вида '19 : 30'
+    if (/^\d{1,2}\s*:\s*\d{2}$/.test(safeTime)) {
+        safeTime = safeTime.replace(/\s+/g, '');
+    }
     const isoCandidate = safeTime
         ? `${safeDate}T${safeTime.length === 5 ? `${safeTime}:00` : safeTime}`
         : `${safeDate}T00:00:00`;
@@ -176,23 +180,31 @@ router.post('/', auth, async (req, res) => {
                 const accessLink = `${frontendUrl}/gallery.html#event=${eventId}&date=${encodeURIComponent(date || '')}`;
                 
                 QRCode.toDataURL(accessLink, (err, qrCode) => {
-                    if (err) {
-                        return res.status(400).json({ error: err.message });
-                    }
-                    
+                    const qrValue = err ? '' : qrCode;
                     db.run(
                         `UPDATE events SET qr_code = ?, access_link = ? WHERE id = ?`,
-                        [qrCode, accessLink, eventId],
-                        (err) => {
-                            if (err) {
-                                return res.status(400).json({ error: err.message });
+                        [qrValue, accessLink, eventId],
+                        (uErr) => {
+                            if (uErr) {
+                                return res.status(201).json({
+                                    id: eventId,
+                                    name,
+                                    date,
+                                    description,
+                                    qrCode: qrValue,
+                                    access_link: accessLink,
+                                    status: 'scheduled',
+                                    scheduled_start_at: scheduledStartAt,
+                                    auto_end_at: autoEndAt,
+                                    warning: 'created_without_qr'
+                                });
                             }
                             res.status(201).json({
                                 id: eventId,
                                 name,
                                 date,
                                 description,
-                                qrCode,
+                                qrCode: qrValue,
                                 access_link: accessLink,
                                 status: 'scheduled',
                                 scheduled_start_at: scheduledStartAt,
@@ -240,11 +252,10 @@ router.get('/', auth, (req, res) => {
         (rows || []).forEach(row => {
             row.active_users = cleanupInactiveUsers(row.id, now);
             attachBrandingUrl(req, row);
-            // если по какой-то причине ссылка отсутствует — сгенерируем заново
+            // если по какой-то причине ссылка отсутствует — сгенерируем заново (используем обычный id)
             if (!row.access_link) {
                 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-                const et = signEventToken(row.id);
-                row.access_link = `${frontendUrl}/gallery.html#et=${encodeURIComponent(et)}&date=${encodeURIComponent(row.date || '')}`;
+                row.access_link = `${frontendUrl}/gallery.html#event=${row.id}&date=${encodeURIComponent(row.date || '')}`;
             }
         });
         res.json((rows || []).map(row => ({
@@ -531,7 +542,7 @@ router.delete('/:id', auth, (req, res) => {
     if (!eventId) return res.status(400).json({ error: 'Invalid event id' });
 
     db.serialize(() => {
-        db.get(`SELECT branding_background, owner_id FROM events WHERE id = ?`, [eventId], (brandingErr, brandingRow) => {
+        db.get(`SELECT id, name, created_at, branding_background, owner_id, deleted_photo_count FROM events WHERE id = ?`, [eventId], (brandingErr, brandingRow) => {
             if (brandingErr) return res.status(500).json({ error: brandingErr.message });
             if (!brandingRow) return res.status(404).json({ error: 'Событие не найдено' });
             const isRoot = req.user && req.user.role === 'root';
@@ -559,12 +570,23 @@ router.delete('/:id', auth, (req, res) => {
                     dirsToRemove.add(path.dirname(brandingPath));
                 }
 
+                const removedPhotos = (rows || []).length;
+
                 db.run(`DELETE FROM photos WHERE event_id = ?`, [eventId], (photosErr) => {
                     if (photosErr) return res.status(500).json({ error: photosErr.message });
                     db.run(`DELETE FROM events WHERE id = ?`, [eventId], function(eventErr) {
                         if (eventErr) return res.status(500).json({ error: eventErr.message });
                         if (this.changes === 0) return res.status(404).json({ error: 'Событие не найдено' });
                         activeUsers.delete(String(eventId));
+
+                        // Аудит удаления мероприятия
+                        const deletedAt = new Date().toISOString();
+                        db.run(
+                            `INSERT INTO event_audit (event_id, owner_id, name, created_at, deleted_at, total_photos_at_delete, deleted_photos_cumulative)
+                             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                            [brandingRow.id, brandingRow.owner_id, brandingRow.name || '', brandingRow.created_at || null, deletedAt, removedPhotos, Number(brandingRow.deleted_photo_count) || 0]
+                        );
+
                         dirsToRemove.forEach(dir => {
             if (dir && path.resolve(dir) !== uploadsDir) {
                                 fs.rm(dir, { recursive: true, force: true }, () => {});

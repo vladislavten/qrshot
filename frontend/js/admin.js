@@ -75,13 +75,14 @@ function renderUsers(users) {
             : (String(u.role || '').toLowerCase() === 'root' ? 'Администратор' : (u.role || ''));
         return `
         <tr>
-            <td>${u.id}</td>
-            <td>${escapeHtml(u.username)}</td>
-            <td>${escapeHtml(u.displayName || '')}</td>
-            <td>${roleLabel}</td>
-            <td>
+            <td data-label="ID">${u.id}</td>
+            <td data-label="Логин">${escapeHtml(u.username)}</td>
+            <td data-label="Имя">${escapeHtml(u.displayName || '')}</td>
+            <td data-label="Роль">${roleLabel}</td>
+            <td data-label="Действия">
                 <button class="btn-small" data-user-edit-name="${u.id}"><i class="fas fa-pen"></i> Имя</button>
                 <button class="btn-small" data-user-edit-pass="${u.id}"><i class="fas fa-key"></i> Пароль</button>
+                <button class="btn-small btn-danger" data-user-delete="${u.id}" title="Удалить"><i class="fas fa-trash"></i></button>
             </td>
         </tr>
     `;
@@ -105,6 +106,65 @@ function renderUsers(users) {
             showNotification('Пароль обновлён', 'success');
         });
     });
+
+    // Удаление пользователя с подтверждением в модалке
+    const deleteModal = document.getElementById('userDeleteModal');
+    const deleteText = document.getElementById('userDeleteText');
+    const deleteCancel = document.getElementById('userDeleteCancel');
+    const deleteConfirm = document.getElementById('userDeleteConfirm');
+    let deleteTargetId = null;
+
+    tbody.querySelectorAll('[data-user-delete]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            deleteTargetId = btn.getAttribute('data-user-delete');
+            const row = btn.closest('tr');
+            const username = row ? row.querySelector('td[data-label="Логин"]')?.textContent?.trim() : '';
+            if (deleteText) {
+                deleteText.textContent = `Удалить пользователя «${username || deleteTargetId}»?`;
+            }
+            if (deleteModal) {
+                deleteModal.style.display = 'flex';
+                deleteModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('modal-open');
+            }
+        });
+    });
+    const closeDeleteModal = () => {
+        if (deleteModal) {
+            deleteModal.style.display = 'none';
+            deleteModal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
+        }
+        deleteTargetId = null;
+    };
+    if (deleteCancel) deleteCancel.addEventListener('click', closeDeleteModal);
+    if (deleteModal) {
+        deleteModal.addEventListener('click', (e) => {
+            if (e.target === deleteModal) closeDeleteModal();
+        });
+    }
+    if (deleteConfirm) {
+        deleteConfirm.addEventListener('click', async () => {
+            if (!deleteTargetId) return;
+            try {
+                const token = await ensureAdminToken();
+                const res = await fetch(`${API_CONFIG.baseUrl}/users/${encodeURIComponent(deleteTargetId)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    showNotification(data?.error || 'Не удалось удалить пользователя', 'error');
+                    return;
+                }
+                showNotification('Пользователь удалён', 'success');
+                closeDeleteModal();
+                await loadUsers();
+            } catch (_) {
+                showNotification('Ошибка сервера', 'error');
+            }
+        });
+    }
 }
 
 async function updateUser(id, payload) {
@@ -734,8 +794,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Отправка форм
+    let creatingEvent = false;
     document.getElementById('createEventForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (creatingEvent) return;
+        creatingEvent = true;
         const formData = new FormData(e.target);
         
         try {
@@ -787,6 +850,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             if (handleAuthError(error)) return;
             showNotification('Ошибка при создании события', 'error');
+        } finally {
+            creatingEvent = false;
         }
     });
 
@@ -943,6 +1008,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadEvents();
     loadAnalyticsSummary();
     loadUploadsAnalytics();
+    loadEventsOverview();
 });
 
 // ======= Auth helpers =======
@@ -978,8 +1044,14 @@ async function ensureAdminToken() {
 
 function decodeJwtPayload(token) {
     try {
-        const [, payload] = token.split('.');
-        return JSON.parse(atob(payload));
+        const parts = String(token || '').split('.');
+        if (parts.length < 2) return null;
+        let payload = parts[1];
+        // JWT base64url -> base64
+        payload = payload.replace(/-/g, '+').replace(/_/g, '/');
+        while (payload.length % 4) payload += '=';
+        const json = atob(payload);
+        return JSON.parse(json);
     } catch (_) {
         return null;
     }
@@ -1343,7 +1415,7 @@ function renderEvents(events) {
                 <div class="event-header-info">
                     <h3>${escapeHtml(event.name)}</h3>
                     <span class="event-date">${formatEventDateTime(event.scheduled_start_at, event.date)}</span>
-                </div>
+            </div>
                 <span class="${statusInfo.badgeClass}">${statusInfo.label}</span>
             </div>
             ${ownerMarkup}
@@ -1601,7 +1673,10 @@ async function loadAnalyticsSummary() {
     const totalEventsEl = document.getElementById('analyticsTotalEvents');
     if (!totalPhotosEl && !totalSizeEl && !totalEventsEl) return;
     try {
-        const res = await fetch(`${API_CONFIG.baseUrl}/analytics/summary`);
+        const token = await ensureAdminToken();
+        const res = await fetch(`${API_CONFIG.baseUrl}/analytics/summary`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!res.ok) return;
         const data = await res.json();
         if (totalPhotosEl) totalPhotosEl.textContent = data?.totalPhotos ?? 0;
@@ -1615,7 +1690,10 @@ async function loadAnalyticsSummary() {
 async function loadUploadsAnalytics() {
     if (!uploadsChart) return;
     try {
-        const res = await fetch(`${API_CONFIG.baseUrl}/analytics/uploads-by-day?limit=7`);
+        const token = await ensureAdminToken();
+        const res = await fetch(`${API_CONFIG.baseUrl}/analytics/uploads-by-day?limit=7`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!res.ok) return;
         const data = await res.json();
         const labels = (data || []).map(item => {
@@ -1632,6 +1710,162 @@ async function loadUploadsAnalytics() {
         uploadsChart.update();
     } catch (_) {
         // ignore errors
+    }
+}
+
+async function loadEventsOverview() {
+    const summaryEl = document.getElementById('eventsAnalyticsSummary');
+    const bodyEl = document.getElementById('eventsAnalyticsBody');
+    if (!summaryEl && !bodyEl) return;
+
+    // Нормализует строку даты из БД (SQLite часто отдаёт 'YYYY-MM-DD HH:mm:ss' в UTC).
+    // Преобразуем такие строки к локальному времени корректно.
+    const toLocalDateTime = (value) => {
+        if (!value) return '';
+        const raw = String(value);
+        // Если это формат без часового пояса 'YYYY-MM-DD HH:mm:ss' — трактуем как UTC
+        if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(raw)) {
+            try {
+                const d = new Date(raw.replace(' ', 'T') + 'Z');
+                if (!Number.isNaN(d.getTime())) {
+                    return d.toLocaleString('ru-RU');
+                }
+            } catch (_) {}
+        }
+        // Иначе пытаемся обычным конструктором
+        try {
+            const d = new Date(raw);
+            if (!Number.isNaN(d.getTime())) {
+                return d.toLocaleString('ru-RU');
+            }
+        } catch (_) {}
+        return raw;
+    };
+    try {
+        const token = await ensureAdminToken();
+        const res = await fetch(`${API_CONFIG.baseUrl}/analytics/events/overview`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (summaryEl) {
+            const active = Number(data?.totals?.activeCount || 0);
+            const deleted = Number(data?.totals?.deletedCount || 0);
+            summaryEl.innerHTML = `Активных: <b>${active}</b> · Удалённых: <b>${deleted}</b>`;
+        }
+        if (bodyEl) {
+            const items = [];
+            (data?.active || []).forEach(ev => {
+                const ts = ev.created_at ? Date.parse(ev.created_at) : 0;
+                items.push({ kind: 'active', ts: Number.isNaN(ts) ? 0 : ts, ev });
+            });
+            (data?.deleted || []).forEach(ev => {
+                const ts = ev.deleted_at ? Date.parse(ev.deleted_at) : 0;
+                items.push({ kind: 'deleted', ts: Number.isNaN(ts) ? 0 : ts, ev });
+            });
+            items.sort((a, b) => b.ts - a.ts);
+
+            bodyEl.innerHTML = items.map(item => {
+                const ev = item.ev;
+                if (item.kind === 'active') {
+                    return `
+                        <tr>
+                            <td>${escapeHtml(ev.owner_username || '')}</td>
+                            <td>${escapeHtml(ev.name || '')}</td>
+                            <td>${toLocalDateTime(ev.created_at)}</td>
+                            <td></td>
+                            <td>${ev.photos_total || 0}</td>
+                            <td>${ev.photos_deleted || 0}</td>
+                            <td>${escapeHtml(String(ev.status || ''))}</td>
+                            <td></td>
+                        </tr>
+                    `;
+                }
+                return `
+                    <tr>
+                        <td>${escapeHtml(ev.owner_username || '')}</td>
+                        <td>${escapeHtml(ev.name || '')}</td>
+                        <td>${toLocalDateTime(ev.created_at)}</td>
+                        <td>${toLocalDateTime(ev.deleted_at)}</td>
+                        <td>${ev.photos_total_at_delete || 0}</td>
+                        <td>${ev.photos_deleted_total || 0}</td>
+                        <td>Удалено</td>
+                        <td>${isRootAdmin() ? `<button class="btn-small btn-danger" data-ev-del kind="deleted" data-id="${ev.event_id}" title="Удалить запись"><i class="fas fa-trash"></i></button>` : ''}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Привязка удаления с подтверждением (однократно, без накапливания обработчиков)
+            const delModal = document.getElementById('analyticsDeleteModal');
+            const delText = document.getElementById('analyticsDeleteText');
+            const delCancel = document.getElementById('analyticsDeleteCancel');
+            const delConfirm = document.getElementById('analyticsDeleteConfirm');
+            let delTarget = null;
+
+            const openDelModal = (kind, id, titleText) => {
+                delTarget = { kind, id };
+                if (delText) {
+                    delText.textContent = titleText || (kind === 'active'
+                        ? 'Удалить мероприятие и все его данные?'
+                        : 'Удалить запись из истории удалённых мероприятий?');
+                }
+                if (delModal) {
+                    delModal.style.display = 'flex';
+                    delModal.setAttribute('aria-hidden', 'false');
+                    document.body.classList.add('modal-open');
+                }
+            };
+            const closeDel = () => {
+                if (delModal) {
+                    delModal.style.display = 'none';
+                    delModal.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('modal-open');
+                }
+                delTarget = null;
+            };
+
+            // Делегирование на таблицу, чтобы не навешивать обработчики на каждую перерисовку
+            bodyEl.onclick = (e) => {
+                const btn = e.target.closest('[data-ev-del]');
+                if (!btn || !bodyEl.contains(btn)) return;
+                const kind = btn.getAttribute('kind');
+                const id = btn.getAttribute('data-id');
+                const row = btn.closest('tr');
+                const name = row ? row.children[1]?.textContent?.trim() : '';
+                if (kind !== 'deleted') return;
+                openDelModal(kind, id, `Удалить запись «${name}» из истории удалённых мероприятий?`);
+            };
+
+            if (delCancel) delCancel.onclick = closeDel;
+            if (delModal) {
+                delModal.onclick = (e) => {
+                    if (e.target === delModal) closeDel();
+                };
+            }
+            if (delConfirm) {
+                delConfirm.onclick = async () => {
+                    if (!delTarget) return;
+                    try {
+                        const token = await ensureAdminToken();
+                        const url = `${API_CONFIG.baseUrl}/analytics/events/${encodeURIComponent(delTarget.id)}/audit`;
+                        const method = 'DELETE';
+                        const res = await fetch(url, { method, headers: { 'Authorization': `Bearer ${token}` } });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            showNotification(data?.error || 'Ошибка удаления', 'error');
+                            return;
+                        }
+                        showNotification('Удалено', 'success');
+                        closeDel();
+                        await loadEventsOverview();
+                    } catch (_) {
+                        showNotification('Ошибка сервера', 'error');
+                    }
+                };
+            }
+        }
+    } catch (_) {
+        // ignore
     }
 }
 

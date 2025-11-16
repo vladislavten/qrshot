@@ -172,6 +172,10 @@
     border: 1px solid rgba(30,60,114,0.08);
 }
 
+.users-actions {
+    margin: 0 0 12px 0;
+}
+
 .user-form {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
@@ -230,6 +234,7 @@
     padding: 0;
     border-radius: 16px;
     overflow: hidden;
+    overflow-x: auto;
     background: #fff;
     box-shadow: 0 18px 44px rgba(15,30,60,0.18);
     border: 1px solid rgba(30,60,114,0.08);
@@ -238,6 +243,60 @@
 .users-table {
     width: 100%;
     border-collapse: collapse;
+}
+
+/* ===== Desktop: карточки пользователей сеткой по 3 в ряд ===== */
+.users-table {
+    border-collapse: separate;
+    border-spacing: 0 16px;
+}
+.users-table thead {
+    display: none;
+}
+.users-table tbody {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+.users-table tbody tr {
+    display: block;
+    background: #fff;
+    border: 1px solid rgba(30,60,114,0.08);
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(15,30,60,0.10);
+    padding: 12px 16px;
+}
+.users-table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border: none;
+    border-top: 1px dashed rgba(30,60,114,0.08);
+}
+.users-table tbody td:first-child {
+    border-top: none;
+    padding-top: 4px;
+}
+.users-table tbody td:last-child {
+    padding-bottom: 4px;
+}
+.users-table tbody td::before {
+    content: attr(data-label);
+    color: #6a7aa2;
+    font-weight: 600;
+    margin-right: 12px;
+}
+.users-table tbody td:last-child {
+    display: flex;
+    gap: 10px;
+}
+.users-table tbody td:last-child::before {
+    content: 'Действия';
+    margin-right: 12px;
+}
+.users-table tbody td:last-child .btn-small {
+    margin: 0;
 }
 
 .users-table thead th {
@@ -272,12 +331,79 @@
 .btn-small:hover { background: rgba(242,245,255,0.9); box-shadow: 0 6px 14px rgba(30,60,114,0.16); }
 .btn-small + .btn-small { margin-left: 8px; }
 
+.btn-danger {
+    background: linear-gradient(135deg, #e14b4b 0%, #b83232 100%);
+    color: #fff;
+    border-color: rgba(184,50,50,0.35);
+}
+.btn-danger:hover {
+    background: linear-gradient(135deg, #ef5555 0%, #c43a3a 100%);
+    color: #fff;
+    box-shadow: 0 10px 22px rgba(200, 60, 60, 0.28);
+    transform: translateY(-1px);
+}
+.btn-danger:active {
+    transform: translateY(0);
+    box-shadow: 0 6px 16px rgba(200, 60, 60, 0.22);
+}
+
 @media (max-width: 900px) {
     .user-form {
         grid-template-columns: 1fr;
     }
     .user-form .form-row,
     .user-form button { grid-column: 1 / -1; }
+
+    /* Гарантируем видимость кнопок действий и перенос на новую строку */
+    .users-table tbody td:last-child {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .users-table tbody td:last-child .btn-small {
+        margin: 0;
+    }
+}
+
+/* ===== Mobile adaptations for Users block ===== */
+@media (max-width: 720px) {
+    .users-actions {
+        display: flex;
+        justify-content: center;
+        margin: 0 0 14px 0;
+    }
+    .users-actions .btn-primary {
+        width: 100%;
+        max-width: 420px;
+    }
+
+    .users-list {
+        box-shadow: none;
+        border: none;
+        background: transparent;
+        padding: 0;
+    }
+
+    .users-table tbody {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    /* Action buttons stack nicely */
+    .users-table tbody td:last-child {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        align-items: stretch;
+    }
+    /* убираем подпись "Действия", чтобы две кнопки становились в один ряд */
+    .users-table tbody td:last-child::before {
+        content: none;
+    }
+    .users-table tbody td:last-child .btn-small {
+        justify-content: center;
+        margin: 0;
+        width: 100%;
+    }
 }
 
 .moderation-confirm-modal {
@@ -1153,6 +1279,36 @@ body.admin-menu-open {
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.events-analytics-table {
+    margin-top: 12px;
+    overflow-x: auto;
+}
+.events-analytics-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.events-analytics-table thead th {
+    text-align: left;
+    padding: 10px 12px;
+    background: linear-gradient(180deg, rgba(242,245,255,0.9) 0%, rgba(232,236,250,0.9) 100%);
+    color: #1e3c72;
+    font-size: 13px;
+}
+.events-analytics-table tbody td {
+    padding: 10px 12px;
+    border-top: 1px solid rgba(30,60,114,0.08);
+    font-weight: 500;
+    color: #2c406a;
+}
+.stat-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    color: #1e3c72;
+    font-weight: 600;
 }
 
 .stat-item {

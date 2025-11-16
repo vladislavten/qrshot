@@ -85,6 +85,27 @@ router.patch('/:id', auth, requireRoot, async (req, res) => {
   });
 });
 
+// Delete user (root only)
+router.delete('/:id', auth, requireRoot, (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  if (!userId) return res.status(400).json({ error: 'Invalid user id' });
+
+  // Нельзя удалить root из .env на всякий случай
+  const rootUser = (process.env.ADMIN_USER || 'admin').toLowerCase();
+  db.get(`SELECT username FROM users WHERE id = ?`, [userId], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'User not found' });
+    if (String(row.username || '').toLowerCase() === rootUser) {
+      return res.status(400).json({ error: 'Нельзя удалить root-пользователя' });
+    }
+    db.run(`DELETE FROM users WHERE id = ?`, [userId], function (delErr) {
+      if (delErr) return res.status(500).json({ error: delErr.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'User not found' });
+      res.json({ deleted: true });
+    });
+  });
+});
+
 module.exports = router;
 
 
