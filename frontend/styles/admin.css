@@ -1,3 +1,166 @@
+/* ===== Переключатель темы (iOS стиль) ===== */
+.theme-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+}
+
+.theme-toggle {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 28px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.theme-toggle-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.theme-toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 14px;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.1),
+        0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.theme-toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+        0 2px 6px rgba(0, 0, 0, 0.2),
+        0 1px 2px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+}
+
+.theme-toggle-input:checked + .theme-toggle-slider {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.2),
+        0 2px 8px rgba(30, 60, 114, 0.4);
+}
+
+.theme-toggle-input:checked + .theme-toggle-slider::before {
+    transform: translateX(20px);
+    background: #f5d76e;
+    box-shadow: 
+        0 2px 8px rgba(245, 215, 110, 0.4),
+        0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.theme-toggle-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+    color: #ffffff;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.theme-toggle-icon-sun {
+    left: 6px;
+    opacity: 1;
+}
+
+.theme-toggle-icon-moon {
+    right: 6px;
+    opacity: 0;
+    transform: translateY(-50%) rotate(-90deg);
+}
+
+.theme-toggle-input:checked ~ .theme-toggle-slider .theme-toggle-icon-sun {
+    opacity: 0;
+    transform: translateY(-50%) rotate(90deg);
+}
+
+.theme-toggle-input:checked ~ .theme-toggle-slider .theme-toggle-icon-moon {
+    opacity: 1;
+    transform: translateY(-50%) rotate(0deg);
+}
+
+.theme-toggle:hover .theme-toggle-slider {
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.1),
+        0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.theme-toggle-input:checked:hover + .theme-toggle-slider {
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.2),
+        0 4px 12px rgba(30, 60, 114, 0.5);
+}
+
+.theme-toggle:active .theme-toggle-slider::before {
+    transform: scale(0.95);
+}
+
+.theme-toggle-input:checked:active + .theme-toggle-slider::before {
+    transform: translateX(20px) scale(0.95);
+}
+
+/* Мобильная версия переключателя */
+@media (max-width: 768px) {
+    .theme-toggle {
+        width: 44px;
+        height: 26px;
+    }
+    
+    .theme-toggle-slider {
+        border-radius: 13px;
+    }
+    
+    .theme-toggle-slider::before {
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+    }
+    
+    .theme-toggle-input:checked + .theme-toggle-slider::before {
+        transform: translateX(18px);
+    }
+    
+    .theme-toggle-icon {
+        width: 14px;
+        height: 14px;
+        font-size: 11px;
+    }
+    
+    .theme-toggle-icon-sun {
+        left: 5px;
+    }
+    
+    .theme-toggle-icon-moon {
+        right: 5px;
+    }
+}
+
 .language-dropdown.admin-language {
     position: relative;
 }
@@ -8,13 +171,13 @@
     gap: 8px;
     padding: 10px 16px;
     border-radius: 10px;
-    border: 1px solid rgba(30, 60, 114, 0.15);
-    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
     color: var(--primary-color);
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 12px 24px rgba(30, 60, 114, 0.12);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 12px 24px var(--shadow-md);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
     justify-content: center;
     text-align: center;
 }
@@ -32,27 +195,30 @@
     width: min(360px, 90%);
     padding: 28px 24px;
     border-radius: 20px;
-    background: linear-gradient(152deg, rgba(255, 255, 255, 0.98) 0%, rgba(242, 245, 255, 0.94) 100%);
-    box-shadow: 0 24px 58px rgba(15, 30, 60, 0.28);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    background: var(--card-bg-gradient);
+    box-shadow: 0 24px 58px var(--shadow-lg);
+    border: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     gap: 16px;
     text-align: center;
+    transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .session-expired-modal h2 {
     margin: 0;
     font-size: 22px;
-    color: #1e3c72;
+    color: var(--text-primary);
     font-weight: 700;
+    transition: color 0.3s ease;
 }
 
 .session-expired-modal p {
     margin: 0;
     font-size: 15px;
-    color: #4b5a7a;
+    color: var(--text-secondary);
     line-height: 1.5;
+    transition: color 0.3s ease;
 }
 
 .session-expired-actions {
@@ -84,6 +250,17 @@
 }
 
 /* ===== Управление пользователями ===== */
+#users-tab h2 {
+    color: #1a1a1a;
+    margin: 0 0 16px 0;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для заголовка пользователей */
+[data-theme="dark"] #users-tab h2 {
+    color: var(--text-primary);
+}
+
 .users-admin {
     display: grid;
     grid-template-columns: 1fr;
@@ -100,6 +277,14 @@
     background: linear-gradient(152deg, rgba(255,255,255,0.98) 0%, rgba(242,245,255,0.94) 100%);
     box-shadow: 0 24px 58px rgba(15, 30, 60, 0.28);
     border: 1px solid rgba(255, 255, 255, 0.8);
+    transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Темная тема для модального окна пользователей */
+[data-theme="dark"] .users-admin-modal {
+    background: var(--card-bg-gradient);
+    box-shadow: 0 24px 58px var(--shadow-lg);
+    border: 1px solid var(--border-color);
 }
 
 .create-user-modal {
@@ -123,7 +308,9 @@
     font-size: 13px;
     font-weight: 600;
     color: #1e3c72;
+    transition: color 0.3s ease;
 }
+
 .create-user-modal .user-form input[type="text"],
 .create-user-modal .user-form input[type="password"] {
     height: 42px;
@@ -133,6 +320,19 @@
     background: rgba(255,255,255,0.95);
     color: #1e3c72;
     box-sizing: border-box;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Темная тема для формы создания пользователя */
+[data-theme="dark"] .create-user-modal .user-form label {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .create-user-modal .user-form input[type="text"],
+[data-theme="dark"] .create-user-modal .user-form input[type="password"] {
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--text-primary);
 }
 .create-user-modal .user-form button {
     align-self: center;
@@ -184,6 +384,36 @@
     line-height: 1;
     cursor: pointer;
     color: #4b5a7a;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для кнопки закрытия */
+[data-theme="dark"] .users-admin-modal .modal-close {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .users-admin-modal .modal-close:hover {
+    color: var(--text-primary);
+}
+
+/* Общий класс для кнопки закрытия модального окна */
+.modal-close {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #4b5a7a;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для общей кнопки закрытия модального окна */
+[data-theme="dark"] .modal-close {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .modal-close:hover {
+    color: var(--text-primary);
 }
 
 .users-toolbar {
@@ -220,6 +450,7 @@
     font-size: 13px;
     font-weight: 600;
     color: #1e3c72;
+    transition: color 0.3s ease;
 }
 
 .user-form input[type="text"],
@@ -231,6 +462,20 @@
     background: rgba(255,255,255,0.9);
     color: #1e3c72;
     box-shadow: 0 8px 18px rgba(30,60,114,0.08) inset;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Темная тема для формы пользователей */
+[data-theme="dark"] .user-form label {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .user-form input[type="text"],
+[data-theme="dark"] .user-form input[type="password"] {
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--text-primary);
+    box-shadow: 0 8px 18px var(--shadow-sm) inset;
 }
 
 .btn-primary {
@@ -260,6 +505,14 @@
     background: #fff;
     box-shadow: 0 18px 44px rgba(15,30,60,0.18);
     border: 1px solid rgba(30,60,114,0.08);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Темная тема для списка пользователей */
+[data-theme="dark"] .users-list {
+    background: var(--card-bg);
+    box-shadow: 0 18px 44px var(--shadow-lg);
+    border: 1px solid var(--border-color);
 }
 
 .users-table {
@@ -287,6 +540,14 @@
     border-radius: 14px;
     box-shadow: 0 12px 30px rgba(15,30,60,0.10);
     padding: 12px 16px;
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Темная тема для карточек пользователей */
+[data-theme="dark"] .users-table tbody tr {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 12px 30px var(--shadow-md);
 }
 .users-table tbody td {
     display: flex;
@@ -308,6 +569,12 @@
     color: #6a7aa2;
     font-weight: 600;
     margin-right: 12px;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для лейблов в карточках пользователей */
+[data-theme="dark"] .users-table tbody td::before {
+    color: var(--text-secondary);
 }
 .users-table tbody td:last-child {
     display: flex;
@@ -325,16 +592,28 @@
     text-align: left;
     padding: 14px 16px;
     background: linear-gradient(180deg, rgba(242,245,255,0.9) 0%, rgba(232,236,250,0.9) 100%);
-    color: #1e3c72;
+    color: #1a1a1a;
     font-size: 13px;
     letter-spacing: .2px;
+    font-weight: 600;
 }
 
 .users-table tbody td {
     padding: 12px 16px;
     border-top: 1px solid rgba(30,60,114,0.08);
-    color: #2c406a;
+    color: #1a1a1a;
     font-weight: 500;
+}
+
+/* Темная тема для таблицы пользователей */
+[data-theme="dark"] .users-table thead th {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .users-table tbody td {
+    border-top: 1px solid var(--border-color);
+    color: var(--text-primary);
 }
 
 .btn-small {
@@ -439,6 +718,14 @@
     flex-direction: column;
     gap: 18px;
     text-align: left;
+    transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Темная тема для модального окна подтверждения модерации */
+[data-theme="dark"] .moderation-confirm-modal {
+    background: var(--card-bg-gradient);
+    box-shadow: 0 28px 60px var(--shadow-lg);
+    border: 1px solid var(--border-color);
 }
 
 .moderation-confirm-modal h2 {
@@ -446,6 +733,12 @@
     font-size: 24px;
     color: #1e3c72;
     font-weight: 700;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для заголовка модального окна подтверждения модерации */
+[data-theme="dark"] .moderation-confirm-modal h2 {
+    color: var(--text-primary);
 }
 
 .moderation-confirm-modal p {
@@ -453,6 +746,12 @@
     font-size: 15px;
     color: #4b5a7a;
     line-height: 1.5;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для текста модального окна подтверждения модерации */
+[data-theme="dark"] .moderation-confirm-modal p {
+    color: var(--text-secondary);
 }
 
 .moderation-confirm-actions {
@@ -474,10 +773,22 @@
     background: rgba(30, 60, 114, 0.08);
     color: #1e3c72;
     box-shadow: inset 0 0 0 1px rgba(30, 60, 114, 0.16);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .moderation-confirm-cancel:hover {
     background: rgba(30, 60, 114, 0.12);
+}
+
+/* Темная тема для кнопки отмены модерации */
+[data-theme="dark"] .moderation-confirm-cancel {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    box-shadow: inset 0 0 0 1px var(--border-color);
+}
+
+[data-theme="dark"] .moderation-confirm-cancel:hover {
+    background: var(--hover-overlay);
 }
 
 .moderation-confirm-apply {
@@ -507,6 +818,13 @@
     align-items: center;
     gap: 6px;
     margin-left: 12px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Темная тема - светлый текст для счетчика модерации */
+[data-theme="dark"] .moderation-title__count {
+    background: rgba(91, 143, 216, 0.2);
+    color: var(--text-primary);
 }
 
 .moderation-title__count::before {
@@ -554,13 +872,56 @@
     color: var(--primary-color);
 }
 
+/* ===== CSS Variables для тем ===== */
 :root {
+    /* Светлая тема (по умолчанию) */
     --primary-color: #2a5298;
     --secondary-color: #1e3c72;
     --accent-color: #3498db;
     --background-color: #f5f7fa;
     --card-background: #ffffff;
     --admin-header-height: 96px;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f7fa;
+    --bg-tertiary: #eef2f7;
+    --text-primary: #1a1a1a;
+    --text-secondary: #4b5a7a;
+    --text-tertiary: #6b7a9a;
+    --border-color: rgba(30, 60, 114, 0.15);
+    --shadow-sm: rgba(15, 30, 60, 0.08);
+    --shadow-md: rgba(15, 30, 60, 0.12);
+    --shadow-lg: rgba(15, 30, 60, 0.20);
+    --card-bg: rgba(255, 255, 255, 0.98);
+    --card-bg-gradient: linear-gradient(152deg, rgba(255, 255, 255, 0.98) 0%, rgba(242, 245, 255, 0.94) 100%);
+    --input-bg: rgba(255, 255, 255, 0.94);
+    --header-bg: rgba(255, 255, 255, 0.95);
+    --nav-active-bg: rgba(42, 82, 152, 0.1);
+    --hover-overlay: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="dark"] {
+    /* Темная тема */
+    --primary-color: #5b8fd8;
+    --secondary-color: #4a7bc8;
+    --accent-color: #6ba3e8;
+    --background-color: #0f1419;
+    --card-background: #1a1f2e;
+    --bg-primary: #0f1419;
+    --bg-secondary: #1a1f2e;
+    --bg-tertiary: #252b3a;
+    --text-primary: #e8eaf0;
+    --text-secondary: #b8c5d6;
+    --text-tertiary: #8a9bb0;
+    --border-color: rgba(91, 143, 216, 0.15);
+    --shadow-sm: rgba(0, 0, 0, 0.3);
+    --shadow-md: rgba(0, 0, 0, 0.4);
+    --shadow-lg: rgba(0, 0, 0, 0.5);
+    --card-bg: rgba(26, 31, 46, 0.95);
+    --card-bg-gradient: linear-gradient(152deg, rgba(26, 31, 46, 0.98) 0%, rgba(21, 26, 38, 0.94) 100%);
+    --input-bg: rgba(37, 43, 58, 0.94);
+    --header-bg: rgba(15, 20, 25, 0.95);
+    --nav-active-bg: rgba(91, 143, 216, 0.2);
+    --hover-overlay: rgba(255, 255, 255, 0.05);
 }
 
 html {
@@ -571,9 +932,10 @@ body {
     margin: 0;
     padding: 0;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: var(--background-color);
-    color: #333;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body.admin-menu-open {
@@ -592,9 +954,10 @@ body.admin-menu-open {
     z-index: 100;
     width: 100%;
     margin-bottom: 32px;
-    background: rgba(245, 247, 250, 0.95);
-    box-shadow: 0 10px 24px rgba(30, 60, 114, 0.1);
+    background: var(--header-bg);
+    box-shadow: 0 10px 24px var(--shadow-md);
     backdrop-filter: blur(8px);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .admin-header-inner {
@@ -625,15 +988,15 @@ body.admin-menu-open {
     padding: 10px 12px;
     border: none;
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.92);
-    box-shadow: 0 18px 34px rgba(30, 60, 114, 0.2);
+    background: var(--card-bg);
+    box-shadow: 0 18px 34px var(--shadow-lg);
     cursor: pointer;
     transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .admin-menu-open .admin-nav-toggle {
-    background: rgba(255, 255, 255, 1);
-    box-shadow: 0 24px 40px rgba(30, 60, 114, 0.26);
+    background: var(--card-bg);
+    box-shadow: 0 24px 40px var(--shadow-lg);
     transform: translateY(1px);
 }
 
@@ -716,8 +1079,16 @@ body.admin-menu-open {
         opacity: 0;
         pointer-events: none;
         transform: translateY(-8px);
-        transition: opacity 0.25s ease, transform 0.25s ease;
+        transition: opacity 0.25s ease, transform 0.25s ease, background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
         z-index: 110;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Темная тема для мобильного меню */
+    [data-theme="dark"] .admin-header-right {
+        background: var(--card-bg-gradient);
+        box-shadow: 0 24px 52px var(--shadow-lg);
+        border: 1px solid var(--border-color);
     }
 
     .admin-nav {
@@ -731,6 +1102,19 @@ body.admin-menu-open {
         border-radius: 12px;
         background: rgba(42, 82, 152, 0.08);
         color: var(--secondary-color);
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Темная тема для вкладок навигации в мобильном меню */
+    [data-theme="dark"] .nav-tab {
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+    }
+
+    [data-theme="dark"] .nav-tab:hover,
+    [data-theme="dark"] .nav-tab.active {
+        background: var(--nav-active-bg);
+        color: var(--primary-color);
     }
 
     .nav-tab i {
@@ -796,9 +1180,10 @@ body.admin-menu-open {
 }
 
 .section-block {
-    border-bottom: 1px solid rgba(30, 60, 114, 0.12);
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 50px;
     margin-bottom: 10px;
+    transition: border-color 0.3s ease;
 }
 
 .section-block:last-of-type {
@@ -808,13 +1193,15 @@ body.admin-menu-open {
 }
 
 .event-card {
-    background: var(--card-background);
+    background: var(--card-bg);
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px var(--shadow-sm);
     display: flex;
     flex-direction: column;
     gap: 16px;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--border-color);
 }
 
 .event-header {
@@ -828,14 +1215,16 @@ body.admin-menu-open {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: #1e2b4d;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
 }
 
 .event-header-info .event-date {
     display: block;
     margin-top: 4px;
-    color: #6a728b;
+    color: var(--text-secondary);
     font-size: 14px;
+    transition: color 0.3s ease;
 }
 
 .event-status-badge {
@@ -922,9 +1311,41 @@ body.admin-menu-open {
     gap: 6px;
 }
 
+.event-stats-item i {
+    color: inherit;
+}
+
 .event-stats-active {
     color: var(--primary-color, #1e3c72);
     font-weight: 600;
+}
+
+/* Темная тема - светлые иконки и текст статистики */
+[data-theme="dark"] .event-stats {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .event-stats > div {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .event-stats-item {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .event-stats-item i,
+[data-theme="dark"] .event-stats > div i {
+    color: var(--text-primary);
+    opacity: 0.9;
+}
+
+[data-theme="dark"] .event-stats-active {
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .event-stats-active i {
+    color: var(--primary-color);
+    opacity: 1;
 }
 
 .event-actions {
@@ -938,11 +1359,35 @@ body.admin-menu-open {
     border-radius: 6px;
     background: var(--background-color);
     cursor: pointer;
-    transition: background 0.3s;
+    transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .event-actions button:hover {
     background: rgba(30, 60, 114, 0.08);
+}
+
+/* Темная тема - светлые иконки */
+[data-theme="dark"] .event-actions button {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .event-actions button i {
+    color: var(--text-primary);
+    opacity: 0.9;
+    transition: color 0.3s ease, opacity 0.3s ease;
+}
+
+[data-theme="dark"] .event-actions button:hover {
+    background: var(--hover-overlay);
+}
+
+[data-theme="dark"] .event-actions button:hover i {
+    color: var(--primary-color);
+    opacity: 1;
 }
 
 .event-state-controls {
@@ -1028,6 +1473,14 @@ body.admin-menu-open {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Темная тема для модального окна статуса события */
+[data-theme="dark"] .event-status-modal {
+    background: var(--card-bg-gradient);
+    box-shadow: 0 24px 58px var(--shadow-lg);
+    border: 1px solid var(--border-color);
 }
 
 .event-status-modal h2 {
@@ -1035,6 +1488,12 @@ body.admin-menu-open {
     font-size: 22px;
     color: #1e2b4d;
     font-weight: 700;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для заголовка модального окна статуса события */
+[data-theme="dark"] .event-status-modal h2 {
+    color: var(--text-primary);
 }
 
 .event-status-modal p {
@@ -1042,6 +1501,12 @@ body.admin-menu-open {
     font-size: 15px;
     color: #4d5974;
     line-height: 1.5;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для текста модального окна статуса события */
+[data-theme="dark"] .event-status-modal p {
+    color: var(--text-secondary);
 }
 
 .event-status-modal-actions {
@@ -1063,10 +1528,22 @@ body.admin-menu-open {
     background: rgba(30, 60, 114, 0.08);
     color: #1e3c72;
     box-shadow: inset 0 0 0 1px rgba(30, 60, 114, 0.12);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .event-status-cancel:hover {
     background: rgba(30, 60, 114, 0.12);
+}
+
+/* Темная тема для кнопки отмены статуса события */
+[data-theme="dark"] .event-status-cancel {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    box-shadow: inset 0 0 0 1px var(--border-color);
+}
+
+[data-theme="dark"] .event-status-cancel:hover {
+    background: var(--hover-overlay);
 }
 
 .event-status-confirm {
@@ -1090,6 +1567,7 @@ body.admin-menu-open {
     }
 }
 
+/* Обновление модальных окон для темной темы */
 .modal {
     display: none;
     position: fixed;
@@ -1153,15 +1631,16 @@ body.admin-menu-open {
 }
 
 .modal-content {
-    background: rgba(255, 255, 255, 0.98);
+    background: var(--card-bg);
     max-width: 500px;
     margin: 0;
     padding: 30px;
     border-radius: 20px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 24px 80px rgba(13, 27, 52, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow: 0 24px 80px var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .auth-modal {
@@ -1172,6 +1651,13 @@ body.admin-menu-open {
 .auth-modal h2 {
     margin-top: 0;
     margin-bottom: 24px;
+    color: #1a1a1a;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для заголовка модального окна авторизации */
+[data-theme="dark"] .auth-modal h2 {
+    color: var(--text-primary);
 }
 
 .auth-modal input {
@@ -1181,7 +1667,16 @@ body.admin-menu-open {
     border-radius: 10px;
     border: 1px solid #d6d9e5;
     font-size: 15px;
-    transition: border-color 0.2s ease;
+    background: #fff;
+    color: #1a1a1a;
+    transition: border-color 0.2s ease, background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Темная тема для полей ввода модального окна авторизации */
+[data-theme="dark"] .auth-modal input {
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--text-primary);
 }
 
 .auth-modal input:focus {
@@ -1215,22 +1710,24 @@ body.admin-menu-open {
 .settings-modal {
     width: min(780px, 90%);
     padding: clamp(20px, 3vw, 28px);
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 244, 255, 0.92) 100%);
+    background: var(--card-bg-gradient);
     backdrop-filter: blur(20px);
     display: flex;
     flex-direction: column;
     gap: 20px;
     border-radius: 22px;
-    border: 1px solid rgba(255, 255, 255, 0.82);
-    box-shadow: 0 22px 60px rgba(16, 30, 60, 0.26);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 22px 60px var(--shadow-lg);
+    transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .settings-modal h2 {
     margin: 0;
     font-size: clamp(22px, 2.6vw, 28px);
-    color: #152854;
+    color: var(--text-primary);
     font-weight: 700;
     letter-spacing: -0.01em;
+    transition: color 0.3s ease;
 }
 
 .settings-form {
@@ -1301,6 +1798,29 @@ body.admin-menu-open {
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Темная тема - светлый текст для аналитики */
+[data-theme="dark"] .analytics-card {
+    background: var(--card-bg);
+    box-shadow: 0 2px 10px var(--shadow-sm);
+}
+
+[data-theme="dark"] .analytics-card h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .analytics-card .stat-item {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .analytics-card .stat-item i {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .analytics-card .stat-item b {
+    color: var(--text-primary);
 }
 
 .events-analytics-table {
@@ -1315,22 +1835,63 @@ body.admin-menu-open {
     text-align: left;
     padding: 10px 12px;
     background: linear-gradient(180deg, rgba(242,245,255,0.9) 0%, rgba(232,236,250,0.9) 100%);
-    color: #1e3c72;
+    color: #1a1a1a;
     font-size: 13px;
+    font-weight: 600;
 }
 .events-analytics-table tbody td {
     padding: 10px 12px;
     border-top: 1px solid rgba(30,60,114,0.08);
     font-weight: 500;
-    color: #2c406a;
+    color: #1a1a1a;
 }
 .stat-row {
     display: flex;
     gap: 16px;
     flex-wrap: wrap;
     margin-bottom: 8px;
-    color: #1e3c72;
+    color: #1a1a1a;
     font-weight: 600;
+}
+
+.analytics-events-header h3 {
+    color: #1a1a1a;
+    margin: 0;
+    margin-top: 32px;
+}
+
+.analytics-filter label {
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+/* Темная тема для таблицы аналитики */
+[data-theme="dark"] .events-analytics-table thead th {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .events-analytics-table tbody td {
+    border-top: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .stat-row {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .analytics-events-header h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .analytics-filter label {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .analytics-filter select {
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--text-primary);
 }
 
 .stat-item {
@@ -1381,6 +1942,17 @@ body.admin-menu-open {
     align-items: center;
 }
 
+.moderation-toolbar label {
+    color: #1a1a1a;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для label модерации */
+[data-theme="dark"] .moderation-toolbar label {
+    color: var(--text-primary);
+}
+
 .moderation-toolbar select {
     padding: 8px 12px;
     border-radius: 6px;
@@ -1389,6 +1961,14 @@ body.admin-menu-open {
     background: #fff;
     color: #1f2f54;
     font-weight: 500;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Темная тема для выпадающего списка модерации */
+[data-theme="dark"] .moderation-toolbar select {
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--text-primary);
 }
 
 .moderation-toolbar button {
@@ -1409,6 +1989,7 @@ body.admin-menu-open {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 .moderation-toolbar .selection-btn:hover {
@@ -1416,14 +1997,39 @@ body.admin-menu-open {
     border-color: var(--primary-color);
 }
 
+/* Темная тема для кнопок выбора модерации */
+[data-theme="dark"] .moderation-toolbar .selection-btn {
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .moderation-toolbar .selection-btn:hover {
+    background: var(--hover-overlay);
+    border-color: var(--primary-color);
+}
+
 #refreshModerationBtn {
     border: 1px solid rgba(30, 60, 114, 0.18);
     background: rgba(30, 60, 114, 0.08);
     color: #1e3c72;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 #refreshModerationBtn:hover {
     background: rgba(30, 60, 114, 0.14);
+}
+
+/* Темная тема - светлый текст для кнопки Обновить */
+[data-theme="dark"] #refreshModerationBtn {
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] #refreshModerationBtn:hover {
+    background: var(--hover-overlay);
+    color: var(--primary-color);
 }
 
 #approveSelectedBtn,
@@ -1460,6 +2066,13 @@ body.admin-menu-open {
     transform: none;
 }
 
+/* Темная тема для disabled кнопок модерации */
+[data-theme="dark"] #approveSelectedBtn[disabled],
+[data-theme="dark"] #rejectSelectedBtn[disabled] {
+    background: var(--bg-tertiary);
+    color: var(--text-tertiary);
+}
+
 .moderation-photos {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -1473,6 +2086,13 @@ body.admin-menu-open {
     overflow: hidden;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Темная тема для карточек фото модерации */
+[data-theme="dark"] .moderation-item {
+    background: var(--card-bg);
+    box-shadow: 0 2px 10px var(--shadow-sm);
 }
 
 .moderation-item img {
@@ -1521,6 +2141,14 @@ body.admin-menu-open {
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Темная тема для пустого состояния модерации */
+[data-theme="dark"] .moderation-empty {
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    box-shadow: 0 2px 10px var(--shadow-sm);
 }
 
 .moderation-meta button.preview-btn {
@@ -1603,6 +2231,21 @@ body.admin-menu-open {
     box-shadow: 0 0 0 3px rgba(46, 92, 192, 0.3);
 }
 
+/* Темная тема для кнопок вкладок настроек */
+[data-theme="dark"] .settings-modal .tab-btn {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .settings-modal .tab-btn.active {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+    color: #fff;
+    box-shadow: 0 16px 32px var(--shadow-md);
+}
+
+[data-theme="dark"] .settings-modal .tab-btn:hover {
+    background: var(--hover-overlay);
+}
+
 .settings-modal .settings-content {
     display: none;
     padding: 20px;
@@ -1611,6 +2254,14 @@ body.admin-menu-open {
     border: 1px solid rgba(210, 220, 250, 0.75);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
     margin-top: 2px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Темная тема для контента настроек */
+[data-theme="dark"] .settings-modal .settings-content {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 0 0 1px rgba(91, 143, 216, 0.1);
 }
 
 .settings-modal .settings-content.active {
@@ -1643,6 +2294,14 @@ body.admin-menu-open {
     background: rgba(242, 246, 255, 0.65);
     border: 1px solid rgba(210, 220, 250, 0.7);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Темная тема для группы формы настроек */
+[data-theme="dark"] .settings-modal .form-group {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 1px 0 rgba(91, 143, 216, 0.1);
 }
 
 .settings-modal .form-group label {
@@ -1650,6 +2309,12 @@ body.admin-menu-open {
     color: #1f2f54;
     font-size: 14px;
     margin: 0;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для label формы настроек */
+[data-theme="dark"] .settings-modal .form-group label {
+    color: var(--text-primary);
 }
 
 .settings-modal .checkbox-label {
@@ -1683,8 +2348,22 @@ body.admin-menu-open {
     background: rgba(255, 255, 255, 0.94);
     font-size: 14px;
     color: #1c2d52;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.3s ease, color 0.3s ease;
     box-sizing: border-box;
+}
+
+/* Темная тема для полей ввода формы настроек */
+[data-theme="dark"] .settings-modal input[type="text"],
+[data-theme="dark"] .settings-modal input[type="date"],
+[data-theme="dark"] .settings-modal input[type="time"],
+[data-theme="dark"] .settings-modal input[type="password"],
+[data-theme="dark"] .settings-modal input[type="email"],
+[data-theme="dark"] .settings-modal input[type="number"],
+[data-theme="dark"] .settings-modal select,
+[data-theme="dark"] .settings-modal textarea {
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--text-primary);
 }
 
 .settings-modal select {
@@ -1746,10 +2425,22 @@ body.admin-menu-open {
     background: rgba(30, 60, 114, 0.08);
     color: #1e3c72;
     box-shadow: inset 0 0 0 1px rgba(30, 60, 114, 0.1);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .settings-modal .form-actions .cancel-btn:hover {
     background: rgba(30, 60, 114, 0.12);
+}
+
+/* Темная тема для кнопки отмены настроек */
+[data-theme="dark"] .settings-modal .form-actions .cancel-btn {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    box-shadow: inset 0 0 0 1px var(--border-color);
+}
+
+[data-theme="dark"] .settings-modal .form-actions .cancel-btn:hover {
+    background: var(--hover-overlay);
 }
 
 .settings-modal .form-actions button:focus-visible {
@@ -1769,6 +2460,14 @@ body.admin-menu-open {
     flex-direction: column;
     gap: 16px;
     overflow-y: auto;
+    transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Темная тема для модального окна создания события */
+[data-theme="dark"] .create-event-modal {
+    background: var(--card-bg-gradient);
+    box-shadow: 0 28px 70px var(--shadow-lg);
+    border: 1px solid var(--border-color);
 }
 
 .create-event-modal h2 {
@@ -1777,6 +2476,12 @@ body.admin-menu-open {
     color: #152854;
     font-weight: 700;
     letter-spacing: -0.01em;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для заголовка модального окна создания события */
+[data-theme="dark"] .create-event-modal h2 {
+    color: var(--text-primary);
 }
 
 .create-event-form {
@@ -1800,6 +2505,14 @@ body.admin-menu-open {
     background: rgba(242, 246, 255, 0.65);
     border: 1px solid rgba(210, 220, 250, 0.7);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Темная тема для группы формы создания события */
+[data-theme="dark"] .create-event-form .form-group {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 1px 0 rgba(91, 143, 216, 0.1);
 }
 
 .create-event-form .form-group label {
@@ -1807,6 +2520,12 @@ body.admin-menu-open {
     color: #1f2f54;
     font-size: 14px;
     margin: 0;
+    transition: color 0.3s ease;
+}
+
+/* Темная тема для label формы создания события */
+[data-theme="dark"] .create-event-form .form-group label {
+    color: var(--text-primary);
 }
 
 .create-event-form .form-group input,
@@ -1819,8 +2538,17 @@ body.admin-menu-open {
     background: rgba(255, 255, 255, 0.94);
     font-size: 14px;
     color: #1c2d52;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.3s ease, color 0.3s ease;
     box-sizing: border-box;
+}
+
+/* Темная тема для полей ввода формы создания события */
+[data-theme="dark"] .create-event-form .form-group input,
+[data-theme="dark"] .create-event-form .form-group select,
+[data-theme="dark"] .create-event-form .form-group textarea {
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--text-primary);
 }
 
 .create-event-form .date-quick-actions {
@@ -1839,7 +2567,18 @@ body.admin-menu-open {
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, border-color 0.3s ease;
+}
+
+/* Темная тема для кнопок быстрого выбора даты */
+[data-theme="dark"] .create-event-form .date-quick-btn {
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .create-event-form .date-quick-btn:hover {
+    background: var(--hover-overlay);
 }
 
 .create-event-form .date-quick-btn:hover {
@@ -1918,10 +2657,22 @@ body.admin-menu-open {
     background: rgba(30, 60, 114, 0.08);
     color: #1e3c72;
     box-shadow: inset 0 0 0 1px rgba(30, 60, 114, 0.1);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .create-event-form .form-actions .cancel-btn:hover {
     background: rgba(30, 60, 114, 0.12);
+}
+
+/* Темная тема для кнопки отмены создания события */
+[data-theme="dark"] .create-event-form .form-actions .cancel-btn {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    box-shadow: inset 0 0 0 1px var(--border-color);
+}
+
+[data-theme="dark"] .create-event-form .form-actions .cancel-btn:hover {
+    background: var(--hover-overlay);
 }
 
 .create-event-form .form-actions button:focus-visible {
@@ -2243,28 +2994,6 @@ body.admin-menu-open {
     color: white;
 }
 
-.analytics-actions {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.export-btn {
-    padding: 8px 16px;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s;
-}
-
-.export-btn:hover {
-    background: var(--primary-color);
-    color: white;
-}
 
 .photos-to-delete-grid {
     display: grid;

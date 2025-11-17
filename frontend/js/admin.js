@@ -515,6 +515,42 @@ function getEventActionMeta(action) {
     return EVENT_ACTION_META[key];
 }
 
+// ===== Theme Toggle Functionality =====
+function initThemeToggle() {
+    const themeToggle = document.getElementById('themeToggle');
+    const htmlElement = document.documentElement;
+    
+    // Загружаем сохраненную тему из localStorage
+    const savedTheme = localStorage.getItem('adminTheme') || 'light';
+    
+    // Применяем тему при загрузке
+    if (savedTheme === 'dark') {
+        htmlElement.setAttribute('data-theme', 'dark');
+        if (themeToggle) themeToggle.checked = true;
+    } else {
+        htmlElement.setAttribute('data-theme', 'light');
+        if (themeToggle) themeToggle.checked = false;
+    }
+    
+    // Обработчик переключения темы
+    if (themeToggle) {
+        themeToggle.addEventListener('change', (e) => {
+            const isDark = e.target.checked;
+            
+            if (isDark) {
+                htmlElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('adminTheme', 'dark');
+            } else {
+                htmlElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('adminTheme', 'light');
+            }
+        });
+    }
+}
+
+// Инициализируем переключатель темы сразу, до DOMContentLoaded
+initThemeToggle();
+
 document.addEventListener('DOMContentLoaded', async () => {
     // Инициализация графика
     uploadsChartCtx = document.getElementById('uploadsChart')?.getContext('2d');
@@ -662,10 +698,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         stopSessionManagement();
     });
 
+    let isManualNav = false; // Флаг для отслеживания ручной навигации
+    let scrollSpyTimeout = null; // Таймер для отключения scroll spy
+    let scrollSpyEnabled = true; // Флаг для полного отключения scroll spy
+    
     const updateActiveNav = (targetId) => {
+        // Сначала убираем active со всех ссылок
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        // Затем добавляем active только к нужной ссылке
         navLinks.forEach(link => {
             const hrefId = link.getAttribute('href')?.slice(1);
-            link.classList.toggle('active', hrefId === targetId);
+            if (hrefId === targetId) {
+                link.classList.add('active');
+            }
         });
     };
 
@@ -677,13 +725,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             const targetSection = document.getElementById(targetId);
             if (!targetSection) return;
 
-            targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            updateActiveNav(targetId);
+            // Устанавливаем флаги ручной навигации
+            isManualNav = true;
+            scrollSpyEnabled = false;
+            
+            // Отключаем scroll spy на время навигации
+            if (scrollSpyTimeout) {
+                clearTimeout(scrollSpyTimeout);
+            }
+            
+            // Сразу обновляем активную вкладку - убираем active со всех, добавляем только к кликнутой
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+            
             history.replaceState(null, '', `#${targetId}`);
+            
+            targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Включаем обратно scroll spy после завершения прокрутки
+            scrollSpyTimeout = setTimeout(() => {
+                isManualNav = false;
+                scrollSpyEnabled = true;
+            }, 2000);
         });
     });
 
     const handleScrollSpy = () => {
+        // Не обновляем навигацию, если scroll spy отключен или пользователь вручную кликнул на вкладку
+        if (!scrollSpyEnabled || isManualNav) return;
+        
         if (!sections.length) return;
         const headerHeight = (header?.offsetHeight || 0) + 16;
         let currentSectionId = sections[0].id;
@@ -706,12 +776,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (initialHash) {
         const targetSection = document.getElementById(initialHash);
         if (targetSection) {
+            // Устанавливаем флаг, чтобы scroll spy не переопределил активную вкладку
+            isManualNav = true;
             targetSection.scrollIntoView({ block: 'start' });
             updateActiveNav(initialHash);
+            setTimeout(() => {
+                isManualNav = false;
+            }, 500);
         } else {
             handleScrollSpy();
         }
     } else {
+        // При первой загрузке без hash активируем первую вкладку
+        if (navLinks.length > 0) {
+            const firstLink = navLinks[0];
+            const firstId = firstLink.getAttribute('href')?.slice(1);
+            if (firstId) {
+                updateActiveNav(firstId);
+            }
+        }
         handleScrollSpy();
     }
 
@@ -983,16 +1066,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    const navTabs = document.querySelectorAll('.nav-tab');
-    if (navTabs.length) {
-        navTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                navTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-            });
-        });
-        navTabs[0].classList.add('active');
-    }
 
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
