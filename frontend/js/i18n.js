@@ -13,21 +13,24 @@ const translations = {
         events: 'События',
         moderation: 'Модерация',
         analytics: 'Аналитика',
-        createEvent: 'Создать событие'
+        createEvent: 'Создать событие',
+        footerTagline: 'Делитесь моментами легко и безопасно'
     },
     en: {
         brand: BRAND_CONFIG.names.en || BRAND_CONFIG.names.ru || 'PhotoShare',
         events: 'Events',
         moderation: 'Moderation',
         analytics: 'Analytics',
-        createEvent: 'Create event'
+        createEvent: 'Create event',
+        footerTagline: 'Share moments easily and safely'
     },
     kz: {
         brand: BRAND_CONFIG.names.kz || BRAND_CONFIG.names.ru || 'Фото жинақ',
         events: 'Оқиғалар',
         moderation: 'Модерация',
         analytics: 'Талдау',
-        createEvent: 'Оқиға жасау'
+        createEvent: 'Оқиға жасау',
+        footerTagline: 'Сәттерді жеңіл және қауіпсіз бөлісіңіз'
     }
 };
 
