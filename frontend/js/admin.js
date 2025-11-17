@@ -2121,7 +2121,17 @@ async function moderateSelected(action) {
         }
         showNotification(action === 'approve' ? 'Фото одобрены' : 'Фото отклонены', 'success');
         moderationState.selected.clear();
+        // Remove rejected photos from local state immediately for instant UI update
+        if (action === 'reject') {
+            moderationState.photos = moderationState.photos.filter(p => !ids.includes(p.id));
+            renderModerationPhotos();
+            refreshModerationPendingCounts();
+        }
         await loadEvents();
+        // Reload pending photos to ensure consistency
+        if (action === 'reject') {
+            loadPendingPhotosForCurrent();
+        }
     } catch (error) {
         if (handleAuthError(error)) return;
         showNotification(error.message || 'Ошибка при модерации фото', 'error');

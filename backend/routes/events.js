@@ -3,12 +3,63 @@ const db = require('../db/database');
 const auth = require('../middleware/auth');
 const QRCode = require('qrcode');
 const fs = require('fs');
+const fsPromises = fs.promises;
 const path = require('path');
 const multer = require('multer');
 
 const ACTIVE_USER_TTL_MS = 45 * 1000;
 const activeUsers = new Map();
 const uploadsDir = path.resolve(path.join(__dirname, '..', 'uploads'));
+
+// Helper function to delete file with retry (handles Windows EBUSY errors)
+async function deleteFileWithRetry(filePath, maxRetries = 20, delay = 150) {
+    let attempts = 0;
+    const startTime = Date.now();
+    const timeout = 30000;
+
+    while (attempts < maxRetries) {
+        attempts++;
+        
+        if (Date.now() - startTime > timeout) {
+            console.warn(`File deletion timeout for ${filePath} after ${attempts} attempts`);
+            return false;
+        }
+
+        try {
+            await fsPromises.access(filePath, fs.constants.F_OK);
+        } catch (accessErr) {
+            // File doesn't exist, consider it deleted
+            return true;
+        }
+
+        try {
+            await fsPromises.unlink(filePath);
+            return true;
+        } catch (err) {
+            const isRetryableError = err.code === 'EBUSY' || 
+                                   err.code === 'EPERM' || 
+                                   err.code === 'EACCES' || 
+                                   err.code === 'ENOENT' ||
+                                   err.code === 'EMFILE' ||
+                                   err.code === 'ENFILE';
+
+            if (isRetryableError && attempts < maxRetries) {
+                const baseDelay = Math.min(delay * Math.pow(1.4, attempts - 1), 2000);
+                const jitter = Math.random() * 50;
+                const delayMs = baseDelay + jitter;
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+                continue;
+            }
+
+            if (attempts >= maxRetries) {
+                console.warn(`Failed to delete file ${filePath} after ${attempts} attempts:`, err.message);
+            }
+            return false;
+        }
+    }
+
+    return false;
+}
 
 function ensureDir(dirPath) {
     fs.mkdirSync(dirPath, { recursive: true });
@@ -537,67 +588,165 @@ router.put('/:id', auth, (req, res) => {
 });
 
 // Удаление события и связанных фото [protected]
-router.delete('/:id', auth, (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
     const eventId = parseInt(req.params.id, 10);
     if (!eventId) return res.status(400).json({ error: 'Invalid event id' });
 
-    db.serialize(() => {
-        db.get(`SELECT id, name, created_at, branding_background, owner_id, deleted_photo_count FROM events WHERE id = ?`, [eventId], (brandingErr, brandingRow) => {
-            if (brandingErr) return res.status(500).json({ error: brandingErr.message });
-            if (!brandingRow) return res.status(404).json({ error: 'Событие не найдено' });
-            const isRoot = req.user && req.user.role === 'root';
-            if (!isRoot && brandingRow.owner_id !== req.user.userId) {
-                return res.status(403).json({ error: 'Forbidden' });
-            }
-
-            db.all(`SELECT filename FROM photos WHERE event_id = ?`, [eventId], (selectErr, rows) => {
-                if (selectErr) return res.status(500).json({ error: selectErr.message });
-
-                const dirsToRemove = new Set();
-                (rows || []).forEach(r => {
-                    const rel = r.filename || '';
-                    const filePath = path.join(uploadsDir, rel);
-                    const dirPath = path.dirname(filePath);
-                    dirsToRemove.add(dirPath);
-                    fs.unlink(filePath, () => {});
-                });
-
-                const brandingPath = brandingRow?.branding_background
-                    ? path.join(uploadsDir, brandingRow.branding_background)
-                    : null;
-                if (brandingPath) {
-                    fs.unlink(brandingPath, () => {});
-                    dirsToRemove.add(path.dirname(brandingPath));
-                }
-
-                const removedPhotos = (rows || []).length;
-
-                db.run(`DELETE FROM photos WHERE event_id = ?`, [eventId], (photosErr) => {
-                    if (photosErr) return res.status(500).json({ error: photosErr.message });
-                    db.run(`DELETE FROM events WHERE id = ?`, [eventId], function(eventErr) {
-                        if (eventErr) return res.status(500).json({ error: eventErr.message });
-                        if (this.changes === 0) return res.status(404).json({ error: 'Событие не найдено' });
-                        activeUsers.delete(String(eventId));
-
-                        // Аудит удаления мероприятия
-                        const deletedAt = new Date().toISOString();
-                        db.run(
-                            `INSERT INTO event_audit (event_id, owner_id, name, created_at, deleted_at, total_photos_at_delete, deleted_photos_cumulative)
-                             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                            [brandingRow.id, brandingRow.owner_id, brandingRow.name || '', brandingRow.created_at || null, deletedAt, removedPhotos, Number(brandingRow.deleted_photo_count) || 0]
-                        );
-
-                        dirsToRemove.forEach(dir => {
-            if (dir && path.resolve(dir) !== uploadsDir) {
-                                fs.rm(dir, { recursive: true, force: true }, () => {});
-                            }
-                        });
-                        res.json({ deleted: true });
-                    });
-                });
+    try {
+        // Get event data
+        const eventRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT id, name, created_at, branding_background, owner_id, deleted_photo_count FROM events WHERE id = ?`, [eventId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
             });
         });
-    });
+
+        if (!eventRow) return res.status(404).json({ error: 'Событие не найдено' });
+        
+        const isRoot = req.user && req.user.role === 'root';
+        if (!isRoot && eventRow.owner_id !== req.user.userId) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+
+        // Get all photos with preview filenames
+        const photoRows = await new Promise((resolve, reject) => {
+            db.all(`SELECT filename, preview_filename FROM photos WHERE event_id = ?`, [eventId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+
+        const removedPhotos = photoRows.length;
+
+        // Delete photos from database first
+        await new Promise((resolve, reject) => {
+            db.run(`DELETE FROM photos WHERE event_id = ?`, [eventId], (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+
+        // Delete event from database
+        const deleteResult = await new Promise((resolve, reject) => {
+            db.run(`DELETE FROM events WHERE id = ?`, [eventId], function(err) {
+                if (err) reject(err);
+                else resolve({ changes: this.changes });
+            });
+        });
+
+        if (deleteResult.changes === 0) {
+            return res.status(404).json({ error: 'Событие не найдено' });
+        }
+
+        activeUsers.delete(String(eventId));
+
+        // Аудит удаления мероприятия
+        const deletedAt = new Date().toISOString();
+        await new Promise((resolve, reject) => {
+            db.run(
+                `INSERT INTO event_audit (event_id, owner_id, name, created_at, deleted_at, total_photos_at_delete, deleted_photos_cumulative)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [eventRow.id, eventRow.owner_id, eventRow.name || '', eventRow.created_at || null, deletedAt, removedPhotos, Number(eventRow.deleted_photo_count) || 0],
+                (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                }
+            );
+        });
+
+        // Delete files in background (fire-and-forget) to avoid blocking response
+        (async () => {
+            // Determine event folder name from first photo or branding path
+            let eventFolderPath = null;
+            
+            if (photoRows.length > 0 && photoRows[0].filename) {
+                // Extract event folder from photo path: {eventId}-{eventName}/...
+                const segments = photoRows[0].filename.split('/').filter(Boolean);
+                if (segments.length > 0) {
+                    eventFolderPath = path.join(uploadsDir, segments[0]);
+                }
+            } else if (eventRow.branding_background) {
+                // Extract event folder from branding path: {eventId}-{eventName}/branding/...
+                const segments = eventRow.branding_background.split('/').filter(Boolean);
+                if (segments.length > 0) {
+                    eventFolderPath = path.join(uploadsDir, segments[0]);
+                }
+            }
+            
+            // If we couldn't determine from paths, try to construct from eventId and name
+            if (!eventFolderPath) {
+                const baseName = eventRow.name ? `${eventId}-${slugify(eventRow.name)}` : String(eventId);
+                eventFolderPath = path.join(uploadsDir, baseName);
+            }
+            
+            // Delete all individual files first
+            for (const row of photoRows) {
+                if (row.filename) {
+                    const filePath = path.join(uploadsDir, row.filename);
+                    await deleteFileWithRetry(filePath);
+                }
+                
+                if (row.preview_filename) {
+                    const previewPath = path.join(uploadsDir, row.preview_filename);
+                    await deleteFileWithRetry(previewPath);
+                }
+                
+                // Small delay between deletions
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+
+            // Delete branding background
+            if (eventRow.branding_background) {
+                const brandingPath = path.join(uploadsDir, eventRow.branding_background);
+                await deleteFileWithRetry(brandingPath);
+            }
+
+            // Wait a bit to ensure all files are deleted
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Delete the entire event folder recursively with retry
+            if (eventFolderPath && path.resolve(eventFolderPath) !== uploadsDir) {
+                let folderDeleted = false;
+                let attempts = 0;
+                const maxAttempts = 10;
+                
+                while (!folderDeleted && attempts < maxAttempts) {
+                    attempts++;
+                    try {
+                        // Check if folder exists
+                        await fsPromises.access(eventFolderPath, fs.constants.F_OK);
+                        
+                        // Remove entire folder recursively
+                        await fsPromises.rm(eventFolderPath, { recursive: true, force: true });
+                        console.log(`Deleted event folder: ${eventFolderPath}`);
+                        folderDeleted = true;
+                    } catch (err) {
+                        if (err.code === 'ENOENT') {
+                            // Folder doesn't exist, consider it deleted
+                            folderDeleted = true;
+                        } else if (err.code === 'EBUSY' || err.code === 'EPERM' || err.code === 'EACCES') {
+                            // Retryable error - wait and try again
+                            if (attempts < maxAttempts) {
+                                const delay = Math.min(500 * attempts, 2000);
+                                await new Promise(resolve => setTimeout(resolve, delay));
+                                continue;
+                            } else {
+                                console.warn(`Failed to delete event folder ${eventFolderPath} after ${attempts} attempts:`, err.message);
+                            }
+                        } else {
+                            console.warn(`Failed to delete event folder ${eventFolderPath}:`, err.message);
+                            break;
+                        }
+                    }
+                }
+            }
+        })();
+
+        res.json({ deleted: true });
+    } catch (err) {
+        console.error('Error deleting event:', err);
+        res.status(500).json({ error: err.message || 'Internal server error' });
+    }
 });
 
 module.exports = router;

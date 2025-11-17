@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const path = require('path');
 const fs = require('fs');
+const fsPromises = fs.promises;
 const multer = require('multer');
 const auth = require('../middleware/auth');
 const db = require('../db/database');
@@ -75,16 +76,41 @@ async function generatePreviewForFile(file, uploadSubdir) {
     const previewRelative = uploadSubdir ? `${uploadSubdir}/${previewFileName}` : previewFileName;
     const previewAbsPath = path.join(uploadsDir, previewRelative);
 
-    await sharp(file.path)
-        .rotate()
-        .resize({
-            width: 1024,
-            height: 1024,
-            fit: 'inside',
-            withoutEnlargement: true
-        })
-        .jpeg({ quality: 75 })
-        .toFile(previewAbsPath);
+    // Use sharp with proper cleanup - read file as buffer to avoid keeping descriptor open
+    let fileBuffer = null;
+    let sharpInstance = null;
+    try {
+        // Read entire file into buffer first, then close the file descriptor
+        fileBuffer = await fsPromises.readFile(file.path);
+        
+        // Process with sharp using buffer instead of file path
+        sharpInstance = sharp(fileBuffer);
+        await sharpInstance
+            .rotate()
+            .resize({
+                width: 1024,
+                height: 1024,
+                fit: 'inside',
+                withoutEnlargement: true
+            })
+            .jpeg({ quality: 75 })
+            .toFile(previewAbsPath);
+    } finally {
+        // Clear buffer reference to help GC
+        fileBuffer = null;
+        
+        // Ensure sharp instance is properly cleaned up
+        if (sharpInstance) {
+            try {
+                sharpInstance.destroy();
+            } catch (destroyErr) {
+                // Ignore destroy errors
+            }
+        }
+        
+        // Additional delay to ensure file descriptors are released
+        await new Promise(resolve => setTimeout(resolve, 150));
+    }
 
     return previewRelative;
 }
@@ -206,6 +232,28 @@ router.post('/admin/:eventId/preupload', auth, (req, res) => {
     });
 });
 
+// Helper function to get file URL with fallback to pending if file doesn't exist
+// Note: This is a synchronous check, but it's fast for file existence
+function getFileUrlWithFallback(req, filename) {
+    if (!filename) return '';
+    try {
+        const filePath = path.join(uploadsDir, filename);
+        // Check if file exists, if not, try pending version
+        if (!fs.existsSync(filePath) && !filename.includes('pending')) {
+            const segments = filename.split('/').filter(Boolean);
+            const pendingFilename = [...segments.slice(0, -1), 'pending', segments[segments.length - 1]].join('/');
+            const pendingPath = path.join(uploadsDir, pendingFilename);
+            if (fs.existsSync(pendingPath)) {
+                return getFileUrl(req, pendingFilename);
+            }
+        }
+    } catch (err) {
+        // If check fails, just return original URL
+        console.warn(`Error checking file existence for ${filename}:`, err.message);
+    }
+    return getFileUrl(req, filename);
+}
+
 // List photos by event
 router.get('/event/:eventId', (req, res) => {
     const eventId = parseInt(req.params.eventId, 10);
@@ -217,11 +265,17 @@ router.get('/event/:eventId', (req, res) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        const withUrls = rows.map(p => ({
-            ...p,
-            url: getFileUrl(req, p.filename),
-            preview_url: p.preview_filename ? getFileUrl(req, p.preview_filename) : getFileUrl(req, p.filename)
-        }));
+        const withUrls = rows.map(p => {
+            const url = getFileUrlWithFallback(req, p.filename);
+            const previewUrl = p.preview_filename 
+                ? getFileUrlWithFallback(req, p.preview_filename) 
+                : url;
+            return {
+                ...p,
+                url,
+                preview_url: previewUrl
+            };
+        });
         res.json(withUrls);
     });
 });
@@ -291,61 +345,309 @@ router.get('/pending/count', auth, (req, res) => {
     });
 });
 
+// File operation utilities with robust error handling
+async function safeFileOperation(operation, filePath, options = {}) {
+    const {
+        maxRetries = 20,
+        initialDelay = 100,
+        maxDelay = 3000,
+        backoffMultiplier = 1.5,
+        timeout = 30000
+    } = options;
+
+    let attempts = 0;
+    const startTime = Date.now();
+
+    while (attempts < maxRetries) {
+        attempts++;
+        
+        // Check timeout
+        if (Date.now() - startTime > timeout) {
+            console.warn(`File operation timeout for ${filePath} after ${attempts} attempts`);
+            return false;
+        }
+
+        try {
+            // Check if file exists before operation
+            try {
+                await fsPromises.access(filePath, fs.constants.F_OK);
+            } catch (accessErr) {
+                // File doesn't exist, operation is considered successful
+                return true;
+            }
+
+            // Perform the operation
+            await operation(filePath);
+            return true;
+
+        } catch (err) {
+            const isRetryableError = err.code === 'EBUSY' || 
+                                   err.code === 'EPERM' || 
+                                   err.code === 'EACCES' || 
+                                   err.code === 'ENOENT' ||
+                                   err.code === 'EMFILE' ||
+                                   err.code === 'ENFILE';
+
+            if (isRetryableError && attempts < maxRetries) {
+                // Exponential backoff with jitter
+                const baseDelay = Math.min(
+                    initialDelay * Math.pow(backoffMultiplier, attempts - 1),
+                    maxDelay
+                );
+                const jitter = Math.random() * 50; // Add randomness to avoid thundering herd
+                const delay = baseDelay + jitter;
+                
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+
+            // Non-retryable error or max retries reached
+            if (attempts >= maxRetries) {
+                console.warn(`File operation failed for ${filePath} after ${attempts} attempts:`, err.message);
+            }
+            return false;
+        }
+    }
+
+    return false;
+}
+
+// Delete file with retry
+async function deleteFileWithRetry(filePath) {
+    return safeFileOperation(
+        async (path) => {
+            await fsPromises.unlink(path);
+        },
+        filePath,
+        { maxRetries: 20, initialDelay: 150, maxDelay: 2000 }
+    );
+}
+
+// Move file with retry
+async function moveFileWithRetry(sourcePath, destPath) {
+    // Ensure destination directory exists
+    const destDir = path.dirname(destPath);
+    try {
+        await fsPromises.mkdir(destDir, { recursive: true });
+    } catch (mkdirErr) {
+        // Directory might already exist, continue
+    }
+
+    let attempts = 0;
+    const maxRetries = 25;
+    const initialDelay = 200;
+    const maxDelay = 3000;
+    const backoffMultiplier = 1.5;
+    const startTime = Date.now();
+    const timeout = 30000;
+
+    while (attempts < maxRetries) {
+        attempts++;
+        
+        // Check timeout
+        if (Date.now() - startTime > timeout) {
+            console.warn(`File move timeout for ${sourcePath} after ${attempts} attempts`);
+            return false;
+        }
+
+        try {
+            // Check if source exists
+            try {
+                await fsPromises.access(sourcePath, fs.constants.F_OK);
+            } catch (accessErr) {
+                // Source doesn't exist - check if destination exists
+                try {
+                    await fsPromises.access(destPath, fs.constants.F_OK);
+                    // Destination exists, consider it moved
+                    return true;
+                } catch (destErr) {
+                    // Neither exists, might be already processed
+                    return true;
+                }
+            }
+
+            // Try rename first (atomic operation)
+            try {
+                await fsPromises.rename(sourcePath, destPath);
+                return true;
+            } catch (renameErr) {
+                // If rename fails due to cross-device or busy, try copy + delete
+                if (renameErr.code === 'EXDEV' || renameErr.code === 'EBUSY') {
+                    try {
+                        await fsPromises.copyFile(sourcePath, destPath);
+                        await fsPromises.unlink(sourcePath);
+                        return true;
+                    } catch (copyErr) {
+                        // If copy fails, treat as retryable error
+                        if (copyErr.code === 'EBUSY' || copyErr.code === 'EPERM' || copyErr.code === 'EACCES') {
+                            throw copyErr;
+                        }
+                        throw renameErr;
+                    }
+                } else {
+                    throw renameErr;
+                }
+            }
+        } catch (err) {
+            const isRetryableError = err.code === 'EBUSY' || 
+                                   err.code === 'EPERM' || 
+                                   err.code === 'EACCES' || 
+                                   err.code === 'ENOENT' ||
+                                   err.code === 'EMFILE' ||
+                                   err.code === 'ENFILE';
+
+            if (isRetryableError && attempts < maxRetries) {
+                // Exponential backoff with jitter
+                const baseDelay = Math.min(
+                    initialDelay * Math.pow(backoffMultiplier, attempts - 1),
+                    maxDelay
+                );
+                const jitter = Math.random() * 50;
+                const delay = baseDelay + jitter;
+                
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+
+            // Non-retryable error or max retries reached
+            if (attempts >= maxRetries) {
+                console.warn(`Failed to move file ${sourcePath} to ${destPath} after ${attempts} attempts:`, err.message);
+            }
+            return false;
+        }
+    }
+
+    return false;
+}
+
+
 // Approve photos [protected]
-router.post('/moderate/approve', auth, (req, res) => {
+router.post('/moderate/approve', auth, async (req, res) => {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
     if (ids.length === 0) return res.status(400).json({ error: 'ids are required' });
     const placeholders = ids.map(() => '?').join(',');
 
-    db.all(`SELECT id, event_id, filename FROM photos WHERE id IN (${placeholders})`, ids, (selectErr, rows) => {
-        if (selectErr) return res.status(500).json({ error: selectErr.message });
-        if (!rows || rows.length === 0) return res.status(404).json({ error: 'Photos not found' });
-
-        try {
-            rows.forEach(row => {
-                if (!row.filename) return;
-                const segments = row.filename.split('/').filter(Boolean);
-                const pendingIndex = segments.indexOf('pending');
-                if (pendingIndex !== -1) {
-                    const pendingPath = path.join(uploadsDir, ...segments);
-                    const approvedSegments = segments.slice();
-                    approvedSegments.splice(pendingIndex, 1);
-                    const approvedPath = path.join(uploadsDir, ...approvedSegments);
-                    ensureDir(path.dirname(approvedPath));
-                    if (fs.existsSync(pendingPath)) {
-                        fs.renameSync(pendingPath, approvedPath);
-                    }
-                    row.newFilename = approvedSegments.join('/');
-                } else {
-                    row.newFilename = row.filename;
-                }
-            });
-        } catch (moveErr) {
-            return res.status(500).json({ error: moveErr.message });
-        }
-
-        db.serialize(() => {
-            const stmt = db.prepare(`UPDATE photos SET status = 'approved', filename = ? WHERE id = ?`);
-            rows.forEach(row => {
-                stmt.run(row.newFilename || row.filename, row.id);
-            });
-            stmt.finalize((finalizeErr) => {
-                if (finalizeErr) return res.status(500).json({ error: finalizeErr.message });
-                res.json({ updated: rows.length });
+    try {
+        // Get photos from database
+        const rows = await new Promise((resolve, reject) => {
+            db.all(`SELECT id, event_id, filename, preview_filename FROM photos WHERE id IN (${placeholders})`, ids, (err, result) => {
+                if (err) reject(err);
+                else resolve(result || []);
             });
         });
-    });
+
+        if (!rows || rows.length === 0) {
+            return res.status(404).json({ error: 'Photos not found' });
+        }
+
+        // Move files first, then update database
+        // This ensures files exist at new locations before DB update
+        for (const row of rows) {
+            if (!row.filename) continue;
+            
+            const segments = row.filename.split('/').filter(Boolean);
+            const pendingIndex = segments.indexOf('pending');
+            
+            if (pendingIndex !== -1) {
+                // Move original file
+                const pendingPath = path.join(uploadsDir, ...segments);
+                const approvedSegments = segments.slice();
+                approvedSegments.splice(pendingIndex, 1);
+                const approvedPath = path.join(uploadsDir, ...approvedSegments);
+                
+                const moved = await moveFileWithRetry(pendingPath, approvedPath);
+                if (moved) {
+                    row.newFilename = approvedSegments.join('/');
+                } else {
+                    // If move failed, keep original path (file stays in pending)
+                    row.newFilename = row.filename;
+                    console.warn(`Failed to move file ${pendingPath}, keeping in pending`);
+                }
+                
+                // Move preview file if it exists
+                if (row.preview_filename) {
+                    const previewSegments = row.preview_filename.split('/').filter(Boolean);
+                    const previewPendingIndex = previewSegments.indexOf('pending');
+                    if (previewPendingIndex !== -1) {
+                        const previewPendingPath = path.join(uploadsDir, ...previewSegments);
+                        const previewApprovedSegments = previewSegments.slice();
+                        previewApprovedSegments.splice(previewPendingIndex, 1);
+                        const previewApprovedPath = path.join(uploadsDir, ...previewApprovedSegments);
+                        
+                        const previewMoved = await moveFileWithRetry(previewPendingPath, previewApprovedPath);
+                        if (previewMoved) {
+                            row.newPreviewFilename = previewApprovedSegments.join('/');
+                        } else {
+                            // If preview move failed, keep original path
+                            row.newPreviewFilename = row.preview_filename;
+                            console.warn(`Failed to move preview ${previewPendingPath}, keeping in pending`);
+                        }
+                    } else {
+                        row.newPreviewFilename = row.preview_filename;
+                    }
+                }
+            } else {
+                row.newFilename = row.filename;
+                row.newPreviewFilename = row.preview_filename;
+            }
+            
+            // Small delay between operations to let Windows release locks
+            // Also gives time for any file descriptors to be released
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        // Update database after files are moved
+        // Only update paths if files were successfully moved
+        await new Promise((resolve, reject) => {
+            db.serialize(() => {
+                const stmt = db.prepare(`UPDATE photos SET status = 'approved', filename = ?, preview_filename = ? WHERE id = ?`);
+                rows.forEach(row => {
+                    // Only update filename if it was successfully moved (newFilename is different from original)
+                    const finalFilename = (row.newFilename && row.newFilename !== row.filename) 
+                        ? row.newFilename 
+                        : row.filename;
+                    const finalPreviewFilename = (row.newPreviewFilename && row.newPreviewFilename !== row.preview_filename)
+                        ? row.newPreviewFilename
+                        : row.preview_filename;
+                    
+                    stmt.run(
+                        finalFilename,
+                        finalPreviewFilename,
+                        row.id
+                    );
+                });
+                stmt.finalize((err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
+        });
+
+        res.json({ updated: rows.length });
+    } catch (err) {
+        console.error('Error approving photos:', err);
+        res.status(500).json({ error: err.message || 'Internal server error' });
+    }
 });
 
 // Reject (delete) photos [protected]
-router.post('/moderate/reject', auth, (req, res) => {
+router.post('/moderate/reject', auth, async (req, res) => {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
     if (ids.length === 0) return res.status(400).json({ error: 'ids are required' });
     const placeholders = ids.map(() => '?').join(',');
 
-    db.all(`SELECT id, event_id, filename, likes FROM photos WHERE id IN (${placeholders})`, ids, (selectErr, rows) => {
-        if (selectErr) return res.status(500).json({ error: selectErr.message });
-        if (!rows || rows.length === 0) return res.status(404).json({ error: 'Photos not found' });
+    try {
+        // Get photos from database
+        const rows = await new Promise((resolve, reject) => {
+            db.all(`SELECT id, event_id, filename, preview_filename, likes FROM photos WHERE id IN (${placeholders})`, ids, (err, result) => {
+                if (err) reject(err);
+                else resolve(result || []);
+            });
+        });
+
+        if (!rows || rows.length === 0) {
+            return res.status(404).json({ error: 'Photos not found' });
+        }
 
         const countsByEvent = rows.reduce((acc, row) => {
             if (row.event_id) {
@@ -361,86 +663,148 @@ router.post('/moderate/reject', auth, (req, res) => {
             return acc;
         }, {});
 
-        // Удаляем файлы с диска
-        rows.forEach(row => {
-            if (row.filename) {
-                const filePath = path.join(uploadsDir, row.filename);
-                fs.unlink(filePath, () => {});
+        // Delete files in background (fire-and-forget) for instant UI response
+        (async () => {
+            try {
+                for (const row of rows) {
+                    // Delete original file
+                    if (row.filename) {
+                        const filePath = path.join(uploadsDir, row.filename);
+                        deleteFileWithRetry(filePath).catch(err => {
+                            console.error(`Failed to delete file ${filePath}:`, err);
+                        });
+                    }
+                    
+                    // Delete preview file if it exists
+                    if (row.preview_filename) {
+                        const previewPath = path.join(uploadsDir, row.preview_filename);
+                        deleteFileWithRetry(previewPath).catch(err => {
+                            console.error(`Failed to delete preview ${previewPath}:`, err);
+                        });
+                    }
+                    
+                    // Small delay between deletions
+                    await new Promise(resolve => setTimeout(resolve, 20));
+                }
+            } catch (err) {
+                console.error('Error in background file deletion process:', err);
             }
+        })();
+
+        // Update database immediately without waiting for file deletion
+        const deletedCount = await new Promise((resolve, reject) => {
+            db.run(`DELETE FROM photos WHERE id IN (${placeholders})`, ids, function(err) {
+                if (err) reject(err);
+                else resolve(this.changes);
+            });
         });
 
-        db.run(`DELETE FROM photos WHERE id IN (${placeholders})`, ids, function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-
-            const deletedCount = this.changes;
-
-            // Логируем удаление фото и увеличиваем счётчик у события
-            const nowIso = new Date().toISOString();
+        // Log deletions and update event counters
+        const nowIso = new Date().toISOString();
+        await new Promise((resolve) => {
             const insertDel = db.prepare(`INSERT INTO photo_deletions (event_id, photo_id, deleted_at) VALUES (?, ?, ?)`);
             rows.forEach(row => {
                 insertDel.run(row.event_id || null, row.id || null, nowIso);
             });
-            insertDel.finalize(() => {});
-            // счётчик удалённых фото будет увеличен ниже в агрегирующем UPDATE для каждого события
-
-            const entries = Object.entries(countsByEvent);
-            if (entries.length === 0) {
-                return res.json({ deleted: deletedCount });
-            }
-
-            let pending = entries.length;
-            let responded = false;
-
-            entries.forEach(([eventId, count]) => {
-                const likeReduction = likesByEvent[eventId] || 0;
-                db.run(
-                    `UPDATE events 
-                     SET photo_count = CASE 
-                        WHEN photo_count >= ? THEN photo_count - ? 
-                        ELSE 0 
-                     END,
-                     like_count = CASE 
-                        WHEN like_count >= ? THEN like_count - ? 
-                        ELSE 0 
-                     END
-                     , deleted_photo_count = deleted_photo_count + ?
-                     WHERE id = ?`,
-                    [count, count, likeReduction, likeReduction, count, eventId],
-                    (updateErr) => {
-                        if (responded) return;
-                        if (updateErr) {
-                            responded = true;
-                            return res.status(500).json({ error: updateErr.message });
-                        }
-                        pending -= 1;
-                        if (pending === 0 && !responded) {
-                            responded = true;
-                            res.json({ deleted: deletedCount });
-                        }
-                    }
-                );
-            });
+            insertDel.finalize(() => resolve());
         });
-    });
+
+        // Update event counters
+        const entries = Object.entries(countsByEvent);
+        if (entries.length === 0) {
+            return res.json({ deleted: deletedCount });
+        }
+
+        await Promise.all(
+            entries.map(([eventId, count]) => {
+                return new Promise((resolve) => {
+                    const likeReduction = likesByEvent[eventId] || 0;
+                    db.run(
+                        `UPDATE events 
+                         SET photo_count = CASE 
+                            WHEN photo_count >= ? THEN photo_count - ? 
+                            ELSE 0 
+                         END,
+                         like_count = CASE 
+                            WHEN like_count >= ? THEN like_count - ? 
+                            ELSE 0 
+                         END
+                         , deleted_photo_count = deleted_photo_count + ?
+                         WHERE id = ?`,
+                        [count, count, likeReduction, likeReduction, count, eventId],
+                        (err) => {
+                            if (err) console.error(`Error updating event ${eventId}:`, err);
+                            resolve();
+                        }
+                    );
+                });
+            })
+        );
+
+        res.json({ deleted: deletedCount });
+    } catch (err) {
+        console.error('Error rejecting photos:', err);
+        res.status(500).json({ error: err.message || 'Internal server error' });
+    }
 });
 
 // Delete a single photo [protected]
-router.delete('/:photoId', auth, (req, res) => {
+router.delete('/:photoId', auth, async (req, res) => {
     const photoId = parseInt(req.params.photoId, 10);
     if (!photoId) return res.status(400).json({ error: 'Invalid photo id' });
 
-    db.get(`SELECT filename, event_id, likes FROM photos WHERE id = ?`, [photoId], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (!row) return res.status(404).json({ error: 'Photo not found' });
+    try {
+        // Get photo from database
+        const row = await new Promise((resolve, reject) => {
+            db.get(`SELECT filename, preview_filename, event_id, likes FROM photos WHERE id = ?`, [photoId], (err, result) => {
+                if (err) reject(err);
+                else resolve(result);
+            });
+        });
 
-        const filePath = path.join(uploadsDir, row.filename);
-        fs.unlink(filePath, () => {}); // Удаляем файл с диска
+        if (!row) {
+            return res.status(404).json({ error: 'Photo not found' });
+        }
 
-        db.run(`DELETE FROM photos WHERE id = ?`, [photoId], function(delErr) {
-            if (delErr) return res.status(500).json({ error: delErr.message });
-            if (row.event_id) {
-                // Логирование удаления, увеличение счётчика произойдёт в следующем UPDATE
-                db.run(`INSERT INTO photo_deletions (event_id, photo_id, deleted_at) VALUES (?, ?, datetime('now'))`, [row.event_id, photoId]);
+        // Delete files in background (fire-and-forget) for instant UI response
+        (async () => {
+            try {
+                // Delete original file
+                if (row.filename) {
+                    const filePath = path.join(uploadsDir, row.filename);
+                    deleteFileWithRetry(filePath).catch(err => {
+                        console.error(`Failed to delete file ${filePath}:`, err);
+                    });
+                }
+                
+                // Delete preview file if it exists
+                if (row.preview_filename) {
+                    const previewPath = path.join(uploadsDir, row.preview_filename);
+                    deleteFileWithRetry(previewPath).catch(err => {
+                        console.error(`Failed to delete preview ${previewPath}:`, err);
+                    });
+                }
+            } catch (err) {
+                console.error('Error in background file deletion process:', err);
+            }
+        })();
+
+        // Update database immediately without waiting for file deletion
+        await new Promise((resolve, reject) => {
+            db.run(`DELETE FROM photos WHERE id = ?`, [photoId], function(err) {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+
+        if (row.event_id) {
+            // Log deletion
+            await new Promise((resolve) => {
+                db.run(`INSERT INTO photo_deletions (event_id, photo_id, deleted_at) VALUES (?, ?, datetime('now'))`, [row.event_id, photoId], () => resolve());
+            });
+
+            // Update event counters
+            await new Promise((resolve, reject) => {
                 db.run(
                     `UPDATE events 
                      SET photo_count = CASE 
@@ -454,16 +818,19 @@ router.delete('/:photoId', auth, (req, res) => {
                      , deleted_photo_count = deleted_photo_count + 1
                      WHERE id = ?`,
                     [row.likes || 0, row.likes || 0, row.event_id],
-                    (updateErr) => {
-                        if (updateErr) return res.status(500).json({ error: updateErr.message });
-                        res.json({ deleted: true });
+                    (err) => {
+                        if (err) reject(err);
+                        else resolve();
                     }
                 );
-            } else {
-                res.json({ deleted: true });
-            }
-        });
-    });
+            });
+        }
+
+        res.json({ deleted: true });
+    } catch (err) {
+        console.error('Error deleting photo:', err);
+        res.status(500).json({ error: err.message || 'Internal server error' });
+    }
 });
 
 // Like a photo

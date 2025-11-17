@@ -679,7 +679,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const img = item.querySelector('img');
                 if (img && !(img.complete && img.naturalWidth !== 0)) {
                     img.addEventListener('load', () => scheduleMasonryLayout(), { once: true });
-                    img.addEventListener('error', () => scheduleMasonryLayout(), { once: true });
+                    img.addEventListener('error', (e) => {
+                        // If preview fails to load, try original
+                        const photoIndex = parseInt(item.dataset.index);
+                        const photo = photos[photoIndex];
+                        if (photo && photo.originalUrl && img.src !== photo.originalUrl) {
+                            img.src = photo.originalUrl;
+                        } else {
+                            scheduleMasonryLayout();
+                        }
+                    }, { once: true });
                 }
             });
 
