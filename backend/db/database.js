@@ -26,6 +26,17 @@ db.serialize(() => {
         deleted_at TEXT DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    // История загрузок фото (для графика загрузок, сохраняется даже после удаления)
+    db.run(`CREATE TABLE IF NOT EXISTS photo_uploads_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_id INTEGER,
+        photo_id INTEGER,
+        owner_id INTEGER,
+        uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_photo_uploads_history_uploaded_at ON photo_uploads_history(uploaded_at)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_photo_uploads_history_owner_id ON photo_uploads_history(owner_id)`);
+
     // Аудит событий (создание/удаление)
     db.run(`CREATE TABLE IF NOT EXISTS event_audit (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -104,6 +115,17 @@ db.serialize(() => {
     });
     db.run(`ALTER TABLE photos ADD COLUMN preview_filename TEXT`, (err) => {
         // Игнорируем ошибку при существующей колонке
+    });
+
+    // Удаляем таблицы для распознавания лиц (если они были созданы ранее)
+    db.run(`DROP TABLE IF EXISTS face_group_members`, (err) => {
+        // Игнорируем ошибки
+    });
+    db.run(`DROP TABLE IF EXISTS face_groups`, (err) => {
+        // Игнорируем ошибки
+    });
+    db.run(`DROP TABLE IF EXISTS face_descriptors`, (err) => {
+        // Игнорируем ошибки
     });
 });
 

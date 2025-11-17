@@ -81,8 +81,26 @@ function toPosixPath(parts) {
     return parts.join('/').replace(/\\/g, '/');
 }
 
-function buildBackgroundPaths(eventId, eventName) {
-    const baseName = eventName ? `${eventId}-${slugify(eventName)}` : String(eventId);
+function buildBackgroundPaths(eventId, eventName, createdAt) {
+    // Форматируем дату создания в формат YYYY-MM-DD
+    let dateStr = '';
+    if (createdAt) {
+        try {
+            const date = new Date(createdAt);
+            if (!isNaN(date.getTime())) {
+                dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            }
+        } catch (e) {
+            // Если не удалось распарсить дату, используем текущую дату
+            dateStr = new Date().toISOString().split('T')[0];
+        }
+    } else {
+        dateStr = new Date().toISOString().split('T')[0];
+    }
+    
+    // Формат: id-event_имя-мероприятия_дата-создания
+    const eventNameSlug = eventName ? slugify(eventName) : 'event';
+    const baseName = `${eventId}-event_${eventNameSlug}_${dateStr}`;
     const segments = [baseName, 'branding'];
     const destPath = path.join(uploadsDir, ...segments);
     ensureDir(destPath);
@@ -427,7 +445,7 @@ router.post('/:id/branding/background', auth, (req, res) => {
     if (!eventId) {
         return res.status(400).json({ error: 'Invalid event id' });
     }
-    db.get(`SELECT id, name, branding_background, owner_id FROM events WHERE id = ?`, [eventId], (err, eventRow) => {
+    db.get(`SELECT id, name, branding_background, owner_id, created_at FROM events WHERE id = ?`, [eventId], (err, eventRow) => {
         if (err) return res.status(500).json({ error: err.message });
         if (!eventRow) return res.status(404).json({ error: 'Событие не найдено' });
         const isRoot = req.user && req.user.role === 'root';
@@ -435,7 +453,7 @@ router.post('/:id/branding/background', auth, (req, res) => {
             return res.status(403).json({ error: 'Forbidden' });
         }
 
-        const { destPath, posixDir } = buildBackgroundPaths(eventRow.id, eventRow.name);
+        const { destPath, posixDir } = buildBackgroundPaths(eventRow.id, eventRow.name, eventRow.created_at);
         const storage = multer.diskStorage({
             destination: (reqUpload, file, cb) => cb(null, destPath),
             filename: (reqUpload, file, cb) => {
@@ -673,9 +691,26 @@ router.delete('/:id', auth, async (req, res) => {
                 }
             }
             
-            // If we couldn't determine from paths, try to construct from eventId and name
+            // If we couldn't determine from paths, try to construct from eventId, name and created_at
             if (!eventFolderPath) {
-                const baseName = eventRow.name ? `${eventId}-${slugify(eventRow.name)}` : String(eventId);
+                // Форматируем дату создания в формат YYYY-MM-DD
+                let dateStr = '';
+                if (eventRow.created_at) {
+                    try {
+                        const date = new Date(eventRow.created_at);
+                        if (!isNaN(date.getTime())) {
+                            dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+                        }
+                    } catch (e) {
+                        dateStr = new Date().toISOString().split('T')[0];
+                    }
+                } else {
+                    dateStr = new Date().toISOString().split('T')[0];
+                }
+                
+                // Формат: id-event_имя-мероприятия_дата-создания
+                const eventNameSlug = eventRow.name ? slugify(eventRow.name) : 'event';
+                const baseName = `${eventId}-event_${eventNameSlug}_${dateStr}`;
                 eventFolderPath = path.join(uploadsDir, baseName);
             }
             

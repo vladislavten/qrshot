@@ -1400,7 +1400,7 @@ body.admin-menu-open {
 }
 
 .moderation-toolbar .selection-btn {
-    padding: 8px 16px;
+    padding: 10px 16px;
     border: 1px solid #d3dae9;
     border-radius: 6px;
     background: #fff;
@@ -1637,12 +1637,12 @@ body.admin-menu-open {
 .settings-modal .form-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     padding: 12px 14px;
-    border-radius: 14px;
-    background: rgba(242, 246, 255, 0.6);
-    border: 1px solid rgba(210, 220, 250, 0.65);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    background: rgba(242, 246, 255, 0.65);
+    border: 1px solid rgba(210, 220, 250, 0.7);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .settings-modal .form-group label {
@@ -1670,6 +1670,7 @@ body.admin-menu-open {
 
 .settings-modal input[type="text"],
 .settings-modal input[type="date"],
+.settings-modal input[type="time"],
 .settings-modal input[type="password"],
 .settings-modal input[type="email"],
 .settings-modal input[type="number"],
@@ -1679,7 +1680,7 @@ body.admin-menu-open {
     padding: 10px 14px;
     border-radius: 12px;
     border: 1px solid rgba(174, 188, 226, 0.8);
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.94);
     font-size: 14px;
     color: #1c2d52;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
@@ -1696,9 +1697,8 @@ body.admin-menu-open {
 }
 
 .settings-modal textarea {
-    min-height: 120px;
+    min-height: 118px;
     resize: vertical;
-    grid-column: 1 / -1;
 }
 
 .settings-modal .branding-background-group {

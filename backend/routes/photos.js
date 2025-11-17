@@ -40,8 +40,26 @@ function toPosixPath(parts) {
     return parts.join('/').replace(/\\/g, '/');
 }
 
-function createUploadMiddleware(eventId, eventName, requireModeration) {
-    const baseName = eventName ? `${eventId}-${slugify(eventName)}` : String(eventId);
+function createUploadMiddleware(eventId, eventName, requireModeration, createdAt) {
+    // Форматируем дату создания в формат YYYY-MM-DD
+    let dateStr = '';
+    if (createdAt) {
+        try {
+            const date = new Date(createdAt);
+            if (!isNaN(date.getTime())) {
+                dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            }
+        } catch (e) {
+            // Если не удалось распарсить дату, используем текущую дату
+            dateStr = new Date().toISOString().split('T')[0];
+        }
+    } else {
+        dateStr = new Date().toISOString().split('T')[0];
+    }
+    
+    // Формат: id-event_имя-мероприятия_дата-создания
+    const eventNameSlug = eventName ? slugify(eventName) : 'event';
+    const baseName = `${eventId}-event_${eventNameSlug}_${dateStr}`;
     const segments = [baseName];
     if (requireModeration) {
         segments.push('pending');
@@ -132,7 +150,7 @@ function performPhotoUpload({ req, res, eventId, eventRow, skipStatusCheck = fal
         }
     }
 
-    const uploader = createUploadMiddleware(eventId, eventRow.name, Boolean(eventRow.require_moderation));
+    const uploader = createUploadMiddleware(eventId, eventRow.name, Boolean(eventRow.require_moderation), eventRow.created_at);
 
     uploader(req, res, async (uploadErr) => {
         if (uploadErr) {
@@ -163,28 +181,87 @@ function performPhotoUpload({ req, res, eventId, eventRow, skipStatusCheck = fal
             return res.status(500).json({ error: err.message || 'Failed to generate previews' });
         }
 
-        const stmt = db.prepare(`INSERT INTO photos (event_id, filename, original_name, status, preview_filename) VALUES (?, ?, ?, ?, ?)`);
-        db.serialize(() => {
-            filesWithPreviews.forEach(({ file, storedRelative, previewRelative }) => {
-                stmt.run(eventId, storedRelative, file.originalname, initialStatus, previewRelative);
-            });
-            stmt.finalize((finalizeErr) => {
-                if (finalizeErr) {
-                    return res.status(500).json({ error: finalizeErr.message });
-                }
-                db.run(`UPDATE events SET photo_count = photo_count + ? WHERE id = ?`, [filesWithPreviews.length, eventId]);
-                const files = filesWithPreviews.map(({ file, storedRelative, previewRelative }) => {
-                    return {
-                        id: undefined,
-                        event_id: eventId,
-                        filename: storedRelative,
-                        original_name: file.originalname,
-                        status: initialStatus,
-                        url: getFileUrl(req, storedRelative),
-                        preview_url: previewRelative ? getFileUrl(req, previewRelative) : getFileUrl(req, storedRelative)
-                    };
+        // Получаем owner_id события для истории загрузок
+        db.get(`SELECT owner_id FROM events WHERE id = ?`, [eventId], (err, eventOwnerRow) => {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+            const ownerId = eventOwnerRow?.owner_id || null;
+
+            const stmt = db.prepare(`INSERT INTO photos (event_id, filename, original_name, status, preview_filename) VALUES (?, ?, ?, ?, ?)`);
+            const historyStmt = db.prepare(`INSERT INTO photo_uploads_history (event_id, photo_id, owner_id, uploaded_at) VALUES (?, ?, ?, datetime('now'))`);
+            
+            let insertedCount = 0;
+            let errorCount = 0;
+            const files = [];
+            
+            db.serialize(() => {
+                filesWithPreviews.forEach(({ file, storedRelative, previewRelative }) => {
+                    stmt.run(eventId, storedRelative, file.originalname, initialStatus, previewRelative, function(insertErr) {
+                        if (insertErr) {
+                            console.error('Error inserting photo:', insertErr);
+                            errorCount++;
+                            // Проверяем, все ли операции завершены (включая ошибки)
+                            if (insertedCount + errorCount === filesWithPreviews.length) {
+                                stmt.finalize();
+                                historyStmt.finalize();
+                                if (errorCount === filesWithPreviews.length) {
+                                    return res.status(500).json({ error: 'Failed to insert photos' });
+                                }
+                                // Если хотя бы одна фото вставлена, обновляем счетчик
+                                if (insertedCount > 0) {
+                                    db.run(`UPDATE events SET photo_count = photo_count + ? WHERE id = ?`, [insertedCount, eventId], (updateErr) => {
+                                        if (updateErr) {
+                                            console.error('Error updating photo_count:', updateErr);
+                                        }
+                                        res.status(201).json({ uploaded: files });
+                                    });
+                                } else {
+                                    res.status(201).json({ uploaded: files });
+                                }
+                            }
+                            return;
+                        }
+                        const photoId = this.lastID;
+                        // Записываем в историю загрузок
+                        historyStmt.run(eventId, photoId, ownerId, (historyErr) => {
+                            if (historyErr) {
+                                console.error('Error inserting into photo_uploads_history:', historyErr);
+                            }
+                        });
+                        insertedCount++;
+                        
+                        files.push({
+                            id: photoId,
+                            event_id: eventId,
+                            filename: storedRelative,
+                            original_name: file.originalname,
+                            status: initialStatus,
+                            url: getFileUrl(req, storedRelative),
+                            preview_url: previewRelative ? getFileUrl(req, previewRelative) : getFileUrl(req, storedRelative)
+                        });
+                        
+                        // Когда все фото обработаны
+                        if (insertedCount + errorCount === filesWithPreviews.length) {
+                            stmt.finalize();
+                            historyStmt.finalize((historyErr) => {
+                                if (historyErr) {
+                                    console.error('Error finalizing history stmt:', historyErr);
+                                }
+                                if (insertedCount > 0) {
+                                    db.run(`UPDATE events SET photo_count = photo_count + ? WHERE id = ?`, [insertedCount, eventId], (updateErr) => {
+                                        if (updateErr) {
+                                            return res.status(500).json({ error: updateErr.message });
+                                        }
+                                        res.status(201).json({ uploaded: files });
+                                    });
+                                } else {
+                                    res.status(201).json({ uploaded: files });
+                                }
+                            });
+                        }
+                    });
                 });
-                res.status(201).json({ uploaded: files });
             });
         });
     });
@@ -197,7 +274,7 @@ router.post('/upload', (req, res) => {
         return res.status(400).json({ error: 'event query parameter is required' });
     }
 
-    db.get(`SELECT name, require_moderation, status FROM events WHERE id = ?`, [eventId], (err, eventRow) => {
+    db.get(`SELECT name, require_moderation, status, created_at FROM events WHERE id = ?`, [eventId], (err, eventRow) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -215,7 +292,7 @@ router.post('/admin/:eventId/preupload', auth, (req, res) => {
         return res.status(400).json({ error: 'Invalid event id' });
     }
 
-    db.get(`SELECT id, name, require_moderation, status, owner_id FROM events WHERE id = ?`, [eventId], (err, eventRow) => {
+    db.get(`SELECT id, name, require_moderation, status, owner_id, created_at FROM events WHERE id = ?`, [eventId], (err, eventRow) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }

@@ -163,28 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 50);
             if (!linkUrl) linkUrl = text;
         }
-
-        // Показать ссылку под QR для копирования/перехода
-        try {
-            const container = document.getElementById('qrcode');
-            let linkEl = document.getElementById('qrLink');
-            if (!linkEl) {
-                linkEl = document.createElement('a');
-                linkEl.id = 'qrLink';
-                linkEl.target = '_blank';
-                linkEl.rel = 'noopener';
-                linkEl.style.display = 'block';
-                linkEl.style.marginTop = '12px';
-                linkEl.style.textAlign = 'center';
-                container.appendChild(linkEl);
-            }
-            if (!linkUrl) {
-                // как минимум сформируем из текущего origin и id
-                linkUrl = `${window.location.origin}/gallery.html#event=${encodeURIComponent(eventId || '')}`;
-            }
-            linkEl.href = linkUrl;
-            linkEl.textContent = 'Загрузить фото';
-        } catch (_) {}
     })();
     
     // Обработчик скачивания QR-кода

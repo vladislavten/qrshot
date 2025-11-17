@@ -95,22 +95,23 @@ router.get('/uploads-by-day', auth, (req, res) => {
     const params = [startStr, endStr];
     let sql;
     if (isRoot) {
+        // Используем историю загрузок, чтобы видеть все загруженные фото, даже если они удалены
         sql = `
-            SELECT DATE(p.uploaded_at) AS day, COUNT(*) AS total
-            FROM photos p
-            WHERE p.uploaded_at IS NOT NULL
-              AND DATE(p.uploaded_at) BETWEEN ? AND ?
+            SELECT DATE(h.uploaded_at) AS day, COUNT(*) AS total
+            FROM photo_uploads_history h
+            WHERE h.uploaded_at IS NOT NULL
+              AND DATE(h.uploaded_at) BETWEEN ? AND ?
             GROUP BY day
             ORDER BY day ASC
         `;
     } else {
+        // Для обычных пользователей фильтруем по owner_id
         sql = `
-            SELECT DATE(p.uploaded_at) AS day, COUNT(*) AS total
-            FROM photos p
-            JOIN events e ON e.id = p.event_id
-            WHERE p.uploaded_at IS NOT NULL
-              AND e.owner_id = ?
-              AND DATE(p.uploaded_at) BETWEEN ? AND ?
+            SELECT DATE(h.uploaded_at) AS day, COUNT(*) AS total
+            FROM photo_uploads_history h
+            WHERE h.uploaded_at IS NOT NULL
+              AND h.owner_id = ?
+              AND DATE(h.uploaded_at) BETWEEN ? AND ?
             GROUP BY day
             ORDER BY day ASC
         `;
