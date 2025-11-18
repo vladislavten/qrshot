@@ -7,17 +7,6 @@ const db = new sqlite3.Database(dbPath);
 
 // Инициализация таблиц
 db.serialize(() => {
-    // Аудит: удалённые события
-    db.run(`CREATE TABLE IF NOT EXISTS events_deleted (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        event_id INTEGER,
-        owner_id INTEGER,
-        name TEXT,
-        created_at TEXT,
-        deleted_at TEXT,
-        photos_deleted_total INTEGER DEFAULT 0
-    )`);
-
     // Аудит: удалённые фото (для подсчёта удалённых по активным событиям)
     db.run(`CREATE TABLE IF NOT EXISTS photo_deletions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,17 +26,6 @@ db.serialize(() => {
     db.run(`CREATE INDEX IF NOT EXISTS idx_photo_uploads_history_uploaded_at ON photo_uploads_history(uploaded_at)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_photo_uploads_history_owner_id ON photo_uploads_history(owner_id)`);
 
-    // Аудит событий (создание/удаление)
-    db.run(`CREATE TABLE IF NOT EXISTS event_audit (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        event_id INTEGER,
-        owner_id INTEGER,
-        name TEXT,
-        created_at TEXT,
-        deleted_at TEXT,
-        total_photos_at_delete INTEGER DEFAULT 0,
-        deleted_photos_cumulative INTEGER DEFAULT 0
-    )`);
     // Таблица пользователей
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,7 +71,6 @@ db.serialize(() => {
     db.run(`ALTER TABLE events ADD COLUMN scheduled_start_at TEXT`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN auto_end_at TEXT`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN owner_id INTEGER`, () => {});
-    db.run(`ALTER TABLE events ADD COLUMN deleted_photo_count INTEGER DEFAULT 0`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN deleted_photo_count INTEGER DEFAULT 0`, () => {});
 
     // Таблица фотографий

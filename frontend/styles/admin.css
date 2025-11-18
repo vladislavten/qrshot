@@ -1327,7 +1327,7 @@ body.admin-menu-open {
 
 .event-status--ended {
     background: rgba(90, 102, 124, 0.17);
-    color: #4d5669;
+    color: #536895;
 }
 
 /* Owner line (root only) */
@@ -3020,6 +3020,8 @@ body.admin-menu-open {
     align-items: center;
     gap: 10px;
     animation: slideIn 0.3s ease;
+    color: #4b5a7a;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .notification.success {
@@ -3028,6 +3030,36 @@ body.admin-menu-open {
 
 .notification.error {
     border-left: 4px solid #f44336;
+}
+
+/* Темная тема для уведомлений */
+[data-theme="dark"] .notification {
+    background: var(--card-bg-gradient);
+    color: var(--text-primary);
+    box-shadow: 0 12px 24px var(--shadow-lg);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .notification.success {
+    border-left: 4px solid #4CAF50;
+    background: var(--card-bg-gradient);
+}
+
+[data-theme="dark"] .notification.error {
+    border-left: 4px solid #f44336;
+    background: var(--card-bg-gradient);
+}
+
+[data-theme="dark"] .notification i {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .notification.success i {
+    color: #4CAF50;
+}
+
+[data-theme="dark"] .notification.error i {
+    color: #f44336;
 }
 
 .moderation-item {

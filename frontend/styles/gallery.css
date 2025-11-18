@@ -306,7 +306,7 @@ body.has-branding-image {
 .event-meta h1 {
     margin: 0;
     font-size: clamp(24px, 3vw, 32px);
-    color: #f7f7f7;
+    color: #F7F7F7;
     word-wrap: break-word;
 }
 

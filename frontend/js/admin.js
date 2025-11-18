@@ -2402,7 +2402,7 @@ function openSettings(eventId) {
             if (form.elements.deleteAfter) form.elements.deleteAfter.value = String(evt.auto_delete_days || 14);
             if (form.elements.notifyBeforeDelete) form.elements.notifyBeforeDelete.checked = Boolean(evt.notify_before_delete);
             // Брендинг
-            if (form.elements.primaryColor) form.elements.primaryColor.value = evt.branding_color || '#f5f5f5';
+            if (form.elements.primaryColor) form.elements.primaryColor.value = evt.branding_color || '#000000';
             if (form.elements.backgroundImage) form.elements.backgroundImage.value = evt.branding_background || '';
             if (evt.branding_background_url) {
                 setBrandingPreview(form, evt.branding_background_url);
