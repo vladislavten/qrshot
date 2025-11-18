@@ -7,6 +7,7 @@ const auth = require('../middleware/auth');
 const db = require('../db/database');
 const archiver = require('archiver');
 const sharp = require('sharp');
+const telegramNotifier = require('../services/telegramNotifier');
 
 // Ensure uploads directory exists
 const uploadsDir = path.resolve(path.join(__dirname, '..', 'uploads'));
@@ -260,6 +261,25 @@ function performPhotoUpload({ req, res, eventId, eventRow, skipStatusCheck = fal
                                             return res.status(500).json({ error: updateErr.message });
                                         }
                                         res.status(201).json({ uploaded: files });
+                                        
+                                        // Проверяем и отправляем Telegram уведомление в фоне
+                                        (async () => {
+                                            try {
+                                                db.get(`SELECT name, telegram_enabled, telegram_username, telegram_threshold FROM events WHERE id = ?`, [eventId], async (err, eventRow) => {
+                                                    if (!err && eventRow) {
+                                                        await telegramNotifier.checkAndNotify(
+                                                            eventId,
+                                                            eventRow.name,
+                                                            eventRow.telegram_enabled,
+                                                            eventRow.telegram_username,
+                                                            eventRow.telegram_threshold
+                                                        );
+                                                    }
+                                                });
+                                            } catch (notifyErr) {
+                                                console.error('[Telegram] Ошибка при проверке уведомлений:', notifyErr.message);
+                                            }
+                                        })();
                                     });
                                 } else {
                                     res.status(201).json({ uploaded: files });
@@ -707,6 +727,28 @@ router.post('/moderate/approve', auth, async (req, res) => {
         });
 
         res.json({ updated: rows.length });
+        
+        // Проверяем и отправляем Telegram уведомление в фоне (если количество pending изменилось)
+        if (rows.length > 0) {
+            const eventId = rows[0].event_id;
+            (async () => {
+                try {
+                    db.get(`SELECT name, telegram_enabled, telegram_username, telegram_threshold FROM events WHERE id = ?`, [eventId], async (err, eventRow) => {
+                        if (!err && eventRow) {
+                            await telegramNotifier.checkAndNotify(
+                                eventId,
+                                eventRow.name,
+                                eventRow.telegram_enabled,
+                                eventRow.telegram_username,
+                                eventRow.telegram_threshold
+                            );
+                        }
+                    });
+                } catch (notifyErr) {
+                    console.error('[Telegram] Ошибка при проверке уведомлений:', notifyErr.message);
+                }
+            })();
+        }
     } catch (err) {
         console.error('Error approving photos:', err);
         res.status(500).json({ error: err.message || 'Internal server error' });
@@ -825,6 +867,28 @@ router.post('/moderate/reject', auth, async (req, res) => {
         );
 
         res.json({ deleted: deletedCount });
+        
+        // Проверяем и отправляем Telegram уведомление в фоне (если количество pending изменилось)
+        if (entries.length > 0) {
+            const eventId = entries[0][0];
+            (async () => {
+                try {
+                    db.get(`SELECT name, telegram_enabled, telegram_username, telegram_threshold FROM events WHERE id = ?`, [eventId], async (err, eventRow) => {
+                        if (!err && eventRow) {
+                            await telegramNotifier.checkAndNotify(
+                                eventId,
+                                eventRow.name,
+                                eventRow.telegram_enabled,
+                                eventRow.telegram_username,
+                                eventRow.telegram_threshold
+                            );
+                        }
+                    });
+                } catch (notifyErr) {
+                    console.error('[Telegram] Ошибка при проверке уведомлений:', notifyErr.message);
+                }
+            })();
+        }
     } catch (err) {
         console.error('Error rejecting photos:', err);
         res.status(500).json({ error: err.message || 'Internal server error' });

@@ -47,7 +47,7 @@ db.serialize(() => {
         access_link TEXT,
         require_moderation INTEGER DEFAULT 0,
         upload_access TEXT DEFAULT 'all',
-        view_access TEXT DEFAULT 'link',
+        view_access TEXT DEFAULT 'public',
         auto_delete_days INTEGER DEFAULT 14,
         photo_count INTEGER DEFAULT 0,
         like_count INTEGER DEFAULT 0,
@@ -72,6 +72,18 @@ db.serialize(() => {
     db.run(`ALTER TABLE events ADD COLUMN auto_end_at TEXT`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN owner_id INTEGER`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN deleted_photo_count INTEGER DEFAULT 0`, () => {});
+    db.run(`ALTER TABLE events ADD COLUMN telegram_username TEXT`, () => {});
+    db.run(`ALTER TABLE events ADD COLUMN telegram_threshold INTEGER DEFAULT 10`, () => {});
+    db.run(`ALTER TABLE events ADD COLUMN telegram_enabled INTEGER DEFAULT 0`, () => {});
+
+    // Таблица для хранения соответствия Telegram username -> chat_id
+    db.run(`CREATE TABLE IF NOT EXISTS telegram_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        chat_id INTEGER NOT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_telegram_users_username ON telegram_users(username)`);
 
     // Таблица фотографий
     db.run(`CREATE TABLE IF NOT EXISTS photos (

@@ -321,19 +321,30 @@
                         </label>
                     </div>
                     <div class="form-group">
-                        <label>Кто может загружать фото:</label>
-                        <select name="uploadAccess">
-                            <option value="all">Все по ссылке</option>
-                            <option value="invited">Только приглашенные</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
                         <label>Доступ к просмотру:</label>
                         <select name="viewAccess">
                             <option value="public">Публичный</option>
                             <option value="private">По паролю</option>
-                            <option value="link">По ссылке</option>
                         </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="telegramEnabled">
+                            Включить уведомления в Telegram
+                        </label>
+                    </div>
+
+                    <div class="form-group telegram-settings" style="display: none;">
+                        <label>Telegram username (без @):</label>
+                        <input type="text" name="telegramUsername" placeholder="username" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid rgba(30,60,114,0.15);">
+                        <small style="display: block; margin-top: 4px; color: #666; font-size: 12px;">Укажите username пользователя Telegram (без символа @)</small>
+                    </div>
+
+                    <div class="form-group telegram-settings" style="display: none;">
+                        <label>Порог количества фото для уведомления:</label>
+                        <input type="number" name="telegramThreshold" value="10" min="1" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid rgba(30,60,114,0.15);">
+                        <small style="display: block; margin-top: 4px; color: #666; font-size: 12px;">Уведомление будет отправлено, когда количество фото на модерации превысит это значение</small>
                     </div>
                 </div>
 

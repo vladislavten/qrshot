@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const db = require('./db/database');
 const { startEventScheduler } = require('./services/eventScheduler');
+const telegramNotifier = require('./services/telegramNotifier');
 
 const app = express();
 
@@ -30,6 +31,9 @@ app.use('/api/users', require('./routes/users'));
 
 // Background schedulers
 startEventScheduler(db);
+
+// Инициализация Telegram бота
+telegramNotifier.initTelegramBot();
 
 // Start server
 const PORT = process.env.PORT || 5000;

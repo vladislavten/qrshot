@@ -537,11 +537,14 @@ router.put('/:id', auth, (req, res) => {
         const startTime = body.start_time || body.startTime || body.time || '';
         const requireModerationRaw = body.require_moderation ?? body.requireModeration;
         const uploadAccess = body.upload_access || body.uploadAccess || 'all';
-        const viewAccess = body.view_access || body.viewAccess || 'link';
+        const viewAccess = body.view_access || body.viewAccess || 'public';
         const autoDeleteDaysRaw = body.auto_delete_days ?? body.autoDeleteDays;
         const brandingColor = body.branding_color || body.primaryColor || body.brandingColor || '';
         const brandingBackground = body.branding_background || body.backgroundImage || body.brandingBackground || '';
         const notifyBeforeDelete = (body.notify_before_delete ?? body.notifyBeforeDelete) ? 1 : 0;
+        const telegramEnabled = (body.telegram_enabled ?? body.telegramEnabled) ? 1 : 0;
+        const telegramUsername = (body.telegram_username || body.telegramUsername || '').trim();
+        const telegramThreshold = parseInt(body.telegram_threshold ?? body.telegramThreshold ?? 10, 10);
 
         const requireModeration = requireModerationRaw ? 1 : 0;
         let autoDeleteDays = parseInt(autoDeleteDaysRaw ?? 14, 10);
@@ -582,9 +585,12 @@ router.put('/:id', auth, (req, res) => {
                  branding_background = ?,
                  notify_before_delete = ?,
                  scheduled_start_at = ?,
-                 auto_end_at = ?
+                 auto_end_at = ?,
+                 telegram_enabled = ?,
+                 telegram_username = ?,
+                 telegram_threshold = ?
              WHERE id = ?`,
-            [name, date, description, requireModeration, uploadAccess, viewAccess, autoDeleteDays, brandingColor, brandingBackground, notifyBeforeDelete, scheduledStartAt, autoEndAt, eventId],
+            [name, date, description, requireModeration, uploadAccess, viewAccess, autoDeleteDays, brandingColor, brandingBackground, notifyBeforeDelete, scheduledStartAt, autoEndAt, telegramEnabled, telegramUsername, telegramThreshold, eventId],
             function(err) {
                 if (err) return res.status(500).json({ error: err.message });
                 if (this.changes === 0) return res.status(404).json({ error: 'Событие не найдено' });

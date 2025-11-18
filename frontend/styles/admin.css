@@ -2367,6 +2367,7 @@ body.admin-menu-open {
 .settings-modal .form-group {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: 6px;
     padding: 12px 14px;
     border-radius: 16px;
@@ -2407,9 +2408,21 @@ body.admin-menu-open {
 }
 
 .settings-modal .checkbox-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: #1e3c72;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    max-width: 18px !important;
+    max-height: 18px !important;
+    accent-color: #1e3c72 !important;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    appearance: auto;
+    -webkit-appearance: checkbox;
+    -moz-appearance: checkbox;
 }
 
 .settings-modal input[type="text"],
@@ -2921,20 +2934,14 @@ body.admin-menu-open {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 9px 16px;
+    padding: 14px 16px;
     border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, rgba(30, 60, 114, 0.12) 0%, rgba(42, 82, 152, 0.22) 100%);
-    color: #1e3c72;
-    font-weight: 600;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: #fff;
+    font-weight: 700;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-}
-
-.branding-preupload-btn:hover {
-    transform: translateY(-1px);
-    background: linear-gradient(135deg, rgba(30, 60, 114, 0.18) 0%, rgba(42, 82, 152, 0.28) 100%);
-    box-shadow: 0 12px 22px rgba(30, 60, 114, 0.18);
+    box-shadow: 0 16px 36px rgba(30,60,114,0.28);
 }
 
 .branding-preupload-btn:focus-visible {

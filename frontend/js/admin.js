@@ -973,12 +973,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 start_time: form.elements.eventTime?.value || '',
                 description: form.elements.eventDescription?.value || '',
                 require_moderation: form.elements.requireModeration.checked ? 1 : 0,
-                upload_access: form.elements.uploadAccess?.value || 'all',
-                view_access: form.elements.viewAccess?.value || 'link',
+                upload_access: 'all', // Всегда разрешаем загрузку по ссылке
+                view_access: form.elements.viewAccess?.value || 'public',
                 auto_delete_days: parseInt(form.elements.deleteAfter?.value || '14', 10),
                 notify_before_delete: form.elements.notifyBeforeDelete?.checked ? 1 : 0,
                 branding_color: form.elements.primaryColor?.value || '',
-                branding_background: brandingBackground
+                branding_background: brandingBackground,
+                telegram_enabled: form.elements.telegramEnabled?.checked ? 1 : 0,
+                telegram_username: form.elements.telegramUsername?.value?.trim() || '',
+                telegram_threshold: parseInt(form.elements.telegramThreshold?.value || '10', 10)
             };
 
             const res = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.events}/${encodeURIComponent(eventId)}`, {
@@ -2344,6 +2347,13 @@ function showQRCode(eventId) {
     window.location.href = `qr-page.html?id=${eventId}`;
 }
 
+function toggleTelegramSettings(enabled) {
+    const telegramSettings = document.querySelectorAll('.telegram-settings');
+    telegramSettings.forEach(el => {
+        el.style.display = enabled ? 'block' : 'none';
+    });
+}
+
 function openSettings(eventId) {
     // Загружаем данные события и открываем модалку настроек
     const settingsModal = document.getElementById('settingsModal');
@@ -2352,6 +2362,17 @@ function openSettings(eventId) {
 
     // Сохраняем id события на форме — пригодится при сохранении
     form.dataset.eventId = String(eventId);
+    
+    // Обработчик для checkbox Telegram
+    const telegramCheckbox = form.elements.telegramEnabled;
+    if (telegramCheckbox) {
+        // Устанавливаем начальное состояние
+        toggleTelegramSettings(telegramCheckbox.checked);
+        // Добавляем обработчик изменения
+        telegramCheckbox.addEventListener('change', (e) => {
+            toggleTelegramSettings(e.target.checked);
+        });
+    }
 
     // Сбрасываем активную вкладку на первую
     document.querySelectorAll('.settings-tabs .tab-btn').forEach((t, idx) => {
@@ -2396,8 +2417,7 @@ function openSettings(eventId) {
             if (form.elements.eventDescription) form.elements.eventDescription.value = evt.description || '';
             // Приватность
             form.elements.requireModeration.checked = Boolean(evt.require_moderation);
-            if (form.elements.uploadAccess) form.elements.uploadAccess.value = evt.upload_access || 'all';
-            if (form.elements.viewAccess) form.elements.viewAccess.value = evt.view_access || 'link';
+            if (form.elements.viewAccess) form.elements.viewAccess.value = evt.view_access || 'public';
             // Автоудаление
             if (form.elements.deleteAfter) form.elements.deleteAfter.value = String(evt.auto_delete_days || 14);
             if (form.elements.notifyBeforeDelete) form.elements.notifyBeforeDelete.checked = Boolean(evt.notify_before_delete);
@@ -2409,6 +2429,13 @@ function openSettings(eventId) {
             } else {
                 setBrandingPreview(form, '');
             }
+            // Telegram настройки
+            if (form.elements.telegramEnabled) {
+                form.elements.telegramEnabled.checked = Boolean(evt.telegram_enabled);
+                toggleTelegramSettings(evt.telegram_enabled);
+            }
+            if (form.elements.telegramUsername) form.elements.telegramUsername.value = evt.telegram_username || '';
+            if (form.elements.telegramThreshold) form.elements.telegramThreshold.value = evt.telegram_threshold || 10;
         } catch (_) {
             // При ошибке просто открываем модалку с дефолтными значениями
         } finally {
