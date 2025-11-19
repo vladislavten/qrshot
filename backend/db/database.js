@@ -53,6 +53,7 @@ db.serialize(() => {
         like_count INTEGER DEFAULT 0,
         branding_color TEXT,
         branding_background TEXT,
+        branding_logo TEXT,
         notify_before_delete INTEGER DEFAULT 0,
         status TEXT DEFAULT 'scheduled',
         scheduled_start_at TEXT,
@@ -66,6 +67,7 @@ db.serialize(() => {
     });
     db.run(`ALTER TABLE events ADD COLUMN branding_color TEXT`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN branding_background TEXT`, () => {});
+    db.run(`ALTER TABLE events ADD COLUMN branding_logo TEXT`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN notify_before_delete INTEGER DEFAULT 0`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN status TEXT DEFAULT 'scheduled'`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN scheduled_start_at TEXT`, () => {});

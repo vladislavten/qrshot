@@ -2900,9 +2900,6 @@ body.admin-menu-open {
 }
 
 .branding-remove-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
     padding: 6px 14px;
     border: none;
     border-radius: 999px;
@@ -2913,12 +2910,27 @@ body.admin-menu-open {
     transition: background 0.2s ease;
 }
 
+.branding-preview .branding-remove-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+}
+
+.branding-logo-group .branding-remove-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: inline-block;
+    background: rgba(255, 0, 33, 0.9);
+}
+
 .branding-preupload-panel {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    background: rgba(30, 60, 114, 0.06);
+    background: var(--bg-secondary);
     border-radius: 12px;
     padding: 12px 14px;
 }
@@ -2959,12 +2971,16 @@ body.admin-menu-open {
 
 .branding-upload-wrapper {
     position: relative;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     margin-top: 10px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
-.branding-background-group input[type="file"] {
+.branding-background-group input[type="file"],
+.branding-logo-group input[type="file"] {
     position: absolute;
     inset: 0;
     opacity: 0;
@@ -2996,6 +3012,10 @@ body.admin-menu-open {
 
 .branding-hint {
     display: block;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    box-sizing: border-box;
     margin-top: 8px;
     color: #6a7899;
     font-size: 13px;

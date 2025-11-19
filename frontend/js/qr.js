@@ -104,6 +104,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     brandingColorFromApi = evt.branding_color;
                     brandingBackgroundFromApi = evt.branding_background_url;
+                    if (evt.branding_logo_url) {
+                        const logoContainer = document.getElementById('qrLogoContainer');
+                        const logoImg = document.getElementById('qrLogo');
+                        if (logoContainer && logoImg) {
+                            logoImg.src = evt.branding_logo_url;
+                            logoContainer.style.display = 'block';
+                        }
+                    } else {
+                        const logoContainer = document.getElementById('qrLogoContainer');
+                        if (logoContainer) {
+                            logoContainer.style.display = 'none';
+                        }
+                    }
                     if (evt && typeof evt.qr_code === 'string' && evt.qr_code.startsWith('data:image')) {
                         dataUrlFromBackend = evt.qr_code;
                     }

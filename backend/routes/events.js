@@ -108,6 +108,11 @@ function buildBackgroundPaths(eventId, eventName, createdAt) {
     return { destPath, posixDir };
 }
 
+function buildLogoPaths(eventId, eventName, createdAt) {
+    // Используем ту же логику, что и для фона
+    return buildBackgroundPaths(eventId, eventName, createdAt);
+}
+
 function getUploadsUrl(req, relativePath) {
     if (!relativePath) return '';
     const clean = String(relativePath).replace(/^\/+/, '');
@@ -117,6 +122,7 @@ function getUploadsUrl(req, relativePath) {
 function attachBrandingUrl(req, row) {
     if (!row) return;
     row.branding_background_url = row.branding_background ? getUploadsUrl(req, row.branding_background) : '';
+    row.branding_logo_url = row.branding_logo ? getUploadsUrl(req, row.branding_logo) : '';
 }
 
 function cleanupInactiveUsers(eventId, now = Date.now()) {
@@ -440,6 +446,63 @@ router.post('/:id/status', auth, (req, res) => {
 
 // (Удалены маршруты share/resolve; возвращаемся к id в ссылке)
 
+router.post('/:id/branding/logo', auth, (req, res) => {
+    const eventId = parseInt(req.params.id, 10);
+    if (!eventId) {
+        return res.status(400).json({ error: 'Invalid event id' });
+    }
+    db.get(`SELECT id, name, branding_logo, owner_id, created_at FROM events WHERE id = ?`, [eventId], (err, eventRow) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!eventRow) return res.status(404).json({ error: 'Событие не найдено' });
+        const isRoot = req.user && req.user.role === 'root';
+        if (!isRoot && eventRow.owner_id !== req.user.userId) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+
+        const { destPath, posixDir } = buildLogoPaths(eventRow.id, eventRow.name, eventRow.created_at);
+        const storage = multer.diskStorage({
+            destination: (reqUpload, file, cb) => cb(null, destPath),
+            filename: (reqUpload, file, cb) => {
+                const ext = path.extname(file.originalname) || '.jpg';
+                cb(null, `logo-${Date.now()}${ext}`);
+            }
+        });
+        const upload = multer({
+            storage,
+            limits: { fileSize: 10 * 1024 * 1024 },
+            fileFilter: (reqUpload, file, cb) => {
+                const isImage = /^image\/(jpe?g|png|webp|gif)$/i.test(file.mimetype);
+                cb(isImage ? null : new Error('Неверный формат изображения'), isImage);
+            }
+        }).single('logo');
+
+        upload(req, res, (uploadErr) => {
+            if (uploadErr) {
+                return res.status(400).json({ error: uploadErr.message });
+            }
+            if (!req.file) {
+                return res.status(400).json({ error: 'Файл не найден' });
+            }
+
+            const storedRelative = `${posixDir}/${req.file.filename}`;
+            const previousLogo = eventRow.branding_logo ? path.join(uploadsDir, eventRow.branding_logo) : null;
+
+            db.run(`UPDATE events SET branding_logo = ? WHERE id = ?`, [storedRelative, eventId], function(updateErr) {
+                if (updateErr) {
+                    // попытаться удалить загруженный файл при ошибке
+                    try { fs.unlinkSync(path.join(destPath, req.file.filename)); } catch (_) {}
+                    return res.status(500).json({ error: updateErr.message });
+                }
+                if (previousLogo && previousLogo !== path.join(destPath, req.file.filename)) {
+                    fs.unlink(previousLogo, () => {});
+                }
+                const url = getUploadsUrl(req, storedRelative);
+                res.json({ path: storedRelative, url });
+            });
+        });
+    });
+});
+
 router.post('/:id/branding/background', auth, (req, res) => {
     const eventId = parseInt(req.params.id, 10);
     if (!eventId) {
@@ -541,6 +604,7 @@ router.put('/:id', auth, (req, res) => {
         const autoDeleteDaysRaw = body.auto_delete_days ?? body.autoDeleteDays;
         const brandingColor = body.branding_color || body.primaryColor || body.brandingColor || '';
         const brandingBackground = body.branding_background || body.backgroundImage || body.brandingBackground || '';
+        const brandingLogo = body.branding_logo || '';
         const notifyBeforeDelete = (body.notify_before_delete ?? body.notifyBeforeDelete) ? 1 : 0;
         const telegramEnabled = (body.telegram_enabled ?? body.telegramEnabled) ? 1 : 0;
         const telegramUsername = (body.telegram_username || body.telegramUsername || '').trim();
@@ -583,6 +647,7 @@ router.put('/:id', auth, (req, res) => {
                  auto_delete_days = ?,
                  branding_color = ?,
                  branding_background = ?,
+                 branding_logo = ?,
                  notify_before_delete = ?,
                  scheduled_start_at = ?,
                  auto_end_at = ?,
@@ -590,7 +655,7 @@ router.put('/:id', auth, (req, res) => {
                  telegram_username = ?,
                  telegram_threshold = ?
              WHERE id = ?`,
-            [name, date, description, requireModeration, uploadAccess, viewAccess, autoDeleteDays, brandingColor, brandingBackground, notifyBeforeDelete, scheduledStartAt, autoEndAt, telegramEnabled, telegramUsername, telegramThreshold, eventId],
+            [name, date, description, requireModeration, uploadAccess, viewAccess, autoDeleteDays, brandingColor, brandingBackground, brandingLogo, notifyBeforeDelete, scheduledStartAt, autoEndAt, telegramEnabled, telegramUsername, telegramThreshold, eventId],
             function(err) {
                 if (err) return res.status(500).json({ error: err.message });
                 if (this.changes === 0) return res.status(404).json({ error: 'Событие не найдено' });
@@ -599,6 +664,11 @@ router.put('/:id', auth, (req, res) => {
                 const newBackground = brandingBackground || '';
                 if (previousBackground && previousBackground !== newBackground) {
                     fs.unlink(path.join(uploadsDir, previousBackground), () => {});
+                }
+                const previousLogo = existingRow.branding_logo || '';
+                const newLogo = brandingLogo || '';
+                if (previousLogo && previousLogo !== newLogo) {
+                    fs.unlink(path.join(uploadsDir, previousLogo), () => {});
                 }
 
                 db.get(`SELECT * FROM events WHERE id = ?`, [eventId], (getErr, row) => {

@@ -26,6 +26,7 @@ const MAX_REFRESH_INTERVAL_MS = 5 * 60_000;
 
 let activeUsersPollTimer = null;
 let brandingPreviewObjectUrl = null;
+let brandingLogoPreviewObjectUrl = null;
 let idleTimerId = null;
 let refreshTimerId = null;
 let lastActivityTimestamp = Date.now();
@@ -49,6 +50,13 @@ function revokeBrandingPreviewUrl() {
     if (brandingPreviewObjectUrl) {
         URL.revokeObjectURL(brandingPreviewObjectUrl);
         brandingPreviewObjectUrl = null;
+    }
+}
+
+function revokeBrandingLogoPreviewUrl() {
+    if (brandingLogoPreviewObjectUrl) {
+        URL.revokeObjectURL(brandingLogoPreviewObjectUrl);
+        brandingLogoPreviewObjectUrl = null;
     }
 }
 
@@ -265,13 +273,27 @@ function setBrandingPreview(form, url) {
     const removeBtn = form?.querySelector('[data-remove-background]');
     if (!preview || !image || !removeBtn) return;
     if (url) {
-        preview.hidden = false;
+        preview.removeAttribute('hidden');
+        preview.style.display = 'block';
         image.style.backgroundImage = `url("${url}")`;
-        removeBtn.hidden = false;
+        removeBtn.removeAttribute('hidden');
+        removeBtn.style.display = 'block';
     } else {
-        preview.hidden = true;
+        preview.setAttribute('hidden', '');
+        preview.style.display = 'none';
         image.style.backgroundImage = 'none';
-        removeBtn.hidden = true;
+        removeBtn.setAttribute('hidden', '');
+        removeBtn.style.display = 'none';
+    }
+}
+
+function setBrandingLogoPreview(form, url) {
+    const removeBtn = form?.querySelector('[data-remove-logo]');
+    if (!removeBtn) return;
+    if (url) {
+        removeBtn.style.display = 'block';
+    } else {
+        removeBtn.style.display = 'none';
     }
 }
 
@@ -967,6 +989,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                 form.dataset.removeBackground = 'false';
             }
 
+            const logoFileInput = form.elements.logoFile;
+            let brandingLogo = '';
+
+            if (form.dataset.removeLogo === 'true') {
+                brandingLogo = '';
+            }
+
+            if (logoFileInput && logoFileInput.files && logoFileInput.files.length) {
+                const uploadResult = await uploadBrandingLogo(eventId, logoFileInput.files[0]);
+                brandingLogo = uploadResult.path || '';
+                revokeBrandingLogoPreviewUrl();
+                setBrandingLogoPreview(form, uploadResult.url || '');
+                logoFileInput.value = '';
+                form.dataset.removeLogo = 'false';
+            } else {
+                // Если не загружаем новый файл, но и не удаляем, оставляем текущее значение
+                const existingLogo = form.dataset.existingLogo || '';
+                if (existingLogo && form.dataset.removeLogo !== 'true') {
+                    brandingLogo = existingLogo;
+                }
+            }
+
             const payload = {
                 name: form.elements.eventName?.value || '',
                 date: form.elements.eventDate?.value || '',
@@ -979,6 +1023,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 notify_before_delete: form.elements.notifyBeforeDelete?.checked ? 1 : 0,
                 branding_color: form.elements.primaryColor?.value || '',
                 branding_background: brandingBackground,
+                branding_logo: brandingLogo,
                 telegram_enabled: form.elements.telegramEnabled?.checked ? 1 : 0,
                 telegram_username: form.elements.telegramUsername?.value?.trim() || '',
                 telegram_threshold: parseInt(form.elements.telegramThreshold?.value || '10', 10)
@@ -1032,6 +1077,31 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (hiddenInput) hiddenInput.value = '';
                 setBrandingPreview(settingsForm, '');
                 settingsForm.dataset.removeBackground = 'true';
+            });
+        }
+
+        const logoFileInput = settingsForm.querySelector('input[name="logoFile"]');
+        const removeLogoBtn = settingsForm.querySelector('[data-remove-logo]');
+        settingsForm.dataset.removeLogo = 'false';
+
+        if (logoFileInput) {
+            logoFileInput.addEventListener('change', () => {
+                if (!logoFileInput.files || !logoFileInput.files.length) return;
+                revokeBrandingLogoPreviewUrl();
+                const objectUrl = URL.createObjectURL(logoFileInput.files[0]);
+                brandingLogoPreviewObjectUrl = objectUrl;
+                const removeBtn = settingsForm.querySelector('[data-remove-logo]');
+                if (removeBtn) removeBtn.style.display = 'block';
+                settingsForm.dataset.removeLogo = 'false';
+            });
+        }
+
+        if (removeLogoBtn) {
+            removeLogoBtn.addEventListener('click', () => {
+                revokeBrandingLogoPreviewUrl();
+                if (logoFileInput) logoFileInput.value = '';
+                setBrandingLogoPreview(settingsForm, '');
+                settingsForm.dataset.removeLogo = 'true';
             });
         }
     }
@@ -1715,6 +1785,28 @@ async function uploadBrandingBackground(eventId, file) {
     return data;
 }
 
+async function uploadBrandingLogo(eventId, file) {
+    const token = await ensureAdminToken();
+    const formData = new FormData();
+    formData.append('logo', file);
+    const res = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.events}/${encodeURIComponent(eventId)}/branding/logo`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
+        body: formData
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+        clearAdminToken();
+        throw new Error('Требуется авторизация');
+    }
+    if (!res.ok) {
+        throw new Error(data.error || 'Не удалось загрузить логотип');
+    }
+    return data;
+}
+
 function startActiveUsersPolling() {
     if (activeUsersPollTimer) {
         clearInterval(activeUsersPollTimer);
@@ -2390,6 +2482,13 @@ function openSettings(eventId) {
     revokeBrandingPreviewUrl();
     setBrandingPreview(form, '');
 
+    const logoFileInput = form.elements.logoFile;
+    if (logoFileInput) logoFileInput.value = '';
+    form.dataset.removeLogo = 'false';
+    form.dataset.existingLogo = '';
+    revokeBrandingLogoPreviewUrl();
+    setBrandingLogoPreview(form, '');
+
     // Префилл значений из API
     (async () => {
         try {
@@ -2428,6 +2527,13 @@ function openSettings(eventId) {
                 setBrandingPreview(form, evt.branding_background_url);
             } else {
                 setBrandingPreview(form, '');
+            }
+            if (evt.branding_logo_url) {
+                setBrandingLogoPreview(form, evt.branding_logo_url);
+                form.dataset.existingLogo = evt.branding_logo || '';
+            } else {
+                setBrandingLogoPreview(form, '');
+                form.dataset.existingLogo = '';
             }
             // Telegram настройки
             if (form.elements.telegramEnabled) {
