@@ -83,11 +83,16 @@ async function sendNotification(username, eventName, pendingCount, threshold) {
     // Убираем @ если есть
     const cleanUsername = username.trim().replace(/^@/, '');
     
+    // Получаем адрес сайта из переменной окружения
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const adminLink = `${frontendUrl}/admin#moderation-tab`;
+    
     const message = `⚠️ Внимание! Модерация фото\n\n` +
                    `Событие: ${eventName}\n` +
                    `На модерации: ${pendingCount} фотографий\n` +
                    `Порог: ${threshold} фотографий\n\n` +
-                   `Пожалуйста, проверьте очередь модерации.`;
+                   `Пожалуйста, проверьте очередь модерации.\n\n` +
+                   `${adminLink}`;
 
     try {
         // Получаем chat_id по username из базы данных
