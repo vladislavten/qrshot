@@ -2444,6 +2444,19 @@ body.admin-menu-open {
     box-sizing: border-box;
 }
 
+.settings-modal input.field-error,
+.settings-modal input[type="number"].field-error {
+    border: 2px solid #f44336 !important;
+    box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
+}
+
+/* Темная тема для полей с ошибками */
+[data-theme="dark"] .settings-modal input.field-error,
+[data-theme="dark"] .settings-modal input[type="number"].field-error {
+    border: 2px solid #f44336 !important;
+    box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.2);
+}
+
 /* Темная тема для полей ввода формы настроек */
 [data-theme="dark"] .settings-modal input[type="text"],
 [data-theme="dark"] .settings-modal input[type="date"],

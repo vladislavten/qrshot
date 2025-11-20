@@ -1011,6 +1011,39 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
+            // Валидация Telegram настроек
+            const telegramEnabled = form.elements.telegramEnabled?.checked;
+            const telegramUsername = form.elements.telegramUsername?.value?.trim() || '';
+            const telegramThreshold = form.elements.telegramThreshold?.value || '';
+            
+            // Убираем классы ошибок перед валидацией
+            const telegramUsernameInput = form.elements.telegramUsername;
+            const telegramThresholdInput = form.elements.telegramThreshold;
+            if (telegramUsernameInput) telegramUsernameInput.classList.remove('field-error');
+            if (telegramThresholdInput) telegramThresholdInput.classList.remove('field-error');
+            
+            let hasErrors = false;
+            
+            if (telegramEnabled) {
+                if (!telegramUsername) {
+                    if (telegramUsernameInput) {
+                        telegramUsernameInput.classList.add('field-error');
+                        hasErrors = true;
+                    }
+                }
+                if (!telegramThreshold || isNaN(parseInt(telegramThreshold, 10)) || parseInt(telegramThreshold, 10) <= 0) {
+                    if (telegramThresholdInput) {
+                        telegramThresholdInput.classList.add('field-error');
+                        hasErrors = true;
+                    }
+                }
+            }
+            
+            if (hasErrors) {
+                showNotification('Заполните все обязательные поля для Telegram уведомлений', 'error');
+                return;
+            }
+
             const payload = {
                 name: form.elements.eventName?.value || '',
                 date: form.elements.eventDate?.value || '',
@@ -1024,9 +1057,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 branding_color: form.elements.primaryColor?.value || '',
                 branding_background: brandingBackground,
                 branding_logo: brandingLogo,
-                telegram_enabled: form.elements.telegramEnabled?.checked ? 1 : 0,
-                telegram_username: form.elements.telegramUsername?.value?.trim() || '',
-                telegram_threshold: parseInt(form.elements.telegramThreshold?.value || '10', 10)
+                telegram_enabled: telegramEnabled ? 1 : 0,
+                telegram_username: telegramUsername,
+                telegram_threshold: parseInt(telegramThreshold || '10', 10)
             };
 
             const res = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.events}/${encodeURIComponent(eventId)}`, {
@@ -2444,6 +2477,17 @@ function toggleTelegramSettings(enabled) {
     telegramSettings.forEach(el => {
         el.style.display = enabled ? 'block' : 'none';
     });
+    
+    // Убираем классы ошибок при отключении уведомлений
+    if (!enabled) {
+        const form = document.getElementById('settingsForm');
+        if (form) {
+            const telegramUsernameInput = form.elements.telegramUsername;
+            const telegramThresholdInput = form.elements.telegramThreshold;
+            if (telegramUsernameInput) telegramUsernameInput.classList.remove('field-error');
+            if (telegramThresholdInput) telegramThresholdInput.classList.remove('field-error');
+        }
+    }
 }
 
 function openSettings(eventId) {
@@ -2463,6 +2507,20 @@ function openSettings(eventId) {
         // Добавляем обработчик изменения
         telegramCheckbox.addEventListener('change', (e) => {
             toggleTelegramSettings(e.target.checked);
+        });
+    }
+    
+    // Убираем классы ошибок при вводе в поля Telegram
+    const telegramUsernameInput = form.elements.telegramUsername;
+    const telegramThresholdInput = form.elements.telegramThreshold;
+    if (telegramUsernameInput) {
+        telegramUsernameInput.addEventListener('input', () => {
+            telegramUsernameInput.classList.remove('field-error');
+        });
+    }
+    if (telegramThresholdInput) {
+        telegramThresholdInput.addEventListener('input', () => {
+            telegramThresholdInput.classList.remove('field-error');
         });
     }
 
