@@ -1,0 +1,36 @@
+# robots.txt для qrshot.kz
+# Правила для поисковых роботов
+
+# Разрешаем всем роботам доступ
+User-agent: *
+
+# Разрешаем индексацию только главной страницы
+Allow: /
+Allow: /index.html
+
+# Запрещаем индексацию админ-панели
+Disallow: /admin
+Disallow: /admin.html
+
+# Запрещаем индексацию API
+Disallow: /api/
+
+# Запрещаем индексацию страниц галерей и QR-кодов
+Disallow: /gallery.html
+Disallow: /qr-page.html
+Disallow: /live-wall.html
+
+# Запрещаем индексацию загруженных файлов (фото/видео)
+Disallow: /uploads/
+
+# Запрещаем индексацию служебных файлов
+Disallow: /*.js$
+Disallow: /*.css$
+Disallow: /*.json$
+
+# Указываем задержку между запросами (10 секунд) для снижения нагрузки на сервер
+Crawl-delay: 10
+
+# Ссылка на карту сайта (раскомментируйте, когда создадите sitemap.xml)
+# Sitemap: https://qrshot.kz/sitemap.xml
+
