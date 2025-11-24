@@ -403,9 +403,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateShareButtons(photo) {
         if (!shareButtonsContainer || !photo) return;
-        const shareUrl = photo.url || '';
+        const shareUrl = photo.url || photo.originalUrl || '';
         const pageUrl = `${window.location.origin}/gallery.html?event=${encodeURIComponent(getEventIdFromLocation() || '')}`;
-        const caption = encodeURIComponent(`Посмотрите фото события: ${pageUrl}`);
+        const caption = `Посмотрите фото события: ${pageUrl}`;
         closeShareMenu();
         shareButtonsContainer.querySelectorAll('.share-btn').forEach(btn => {
             const target = btn.dataset.shareTarget;
@@ -413,13 +413,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target === 'instagram') {
                 url = `https://www.instagram.com/?url=${encodeURIComponent(shareUrl)}`;
             } else if (target === 'tiktok') {
-                url = `https://www.tiktok.com/share?url=${encodeURIComponent(shareUrl)}&text=${caption}`;
+                url = `https://www.tiktok.com/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(caption)}`;
             } else if (target === 'whatsapp') {
-                url = `https://api.whatsapp.com/send?text=${caption}%20${encodeURIComponent(shareUrl)}`;
+                // Используем прямой URL к изображению - WhatsApp автоматически предпросмотрит его
+                url = `https://api.whatsapp.com/send?text=${encodeURIComponent(caption + '\n\n' + shareUrl)}`;
             } else if (target === 'telegram') {
-                url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${caption}`;
+                url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(caption)}`;
             }
             btn.dataset.shareUrl = url;
+            // Сохраняем URL изображения для Web Share API
+            btn.dataset.shareImageUrl = shareUrl;
         });
     }
 
@@ -1002,10 +1005,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (shareButtonsContainer) {
-        shareButtonsContainer.addEventListener('click', (e) => {
+        shareButtonsContainer.addEventListener('click', async (e) => {
             const btn = e.target.closest('.share-btn');
             if (!btn) return;
+            const target = btn.dataset.shareTarget;
             const shareUrl = btn.dataset.shareUrl;
+            const imageUrl = btn.dataset.shareImageUrl;
+            
+            // Для WhatsApp на мобильных устройствах используем Web Share API для отправки изображения
+            if (target === 'whatsapp' && navigator.share && imageUrl) {
+                try {
+                    // Загружаем изображение как blob для Web Share API
+                    const response = await fetch(imageUrl);
+                    const blob = await response.blob();
+                    const file = new File([blob], 'photo.jpg', { type: blob.type });
+                    
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Фото из галереи события',
+                            text: 'Посмотрите это фото!'
+                        });
+                        closeShareMenu();
+                        return;
+                    }
+                } catch (shareError) {
+                    // Если Web Share API не сработал, используем обычный способ
+                    console.log('Web Share API не доступен, используем обычный способ:', shareError);
+                }
+            }
+            
+            // Обычный способ - открываем URL
             if (shareUrl) {
                 window.open(shareUrl, '_blank', 'noopener');
             }
