@@ -666,6 +666,8 @@ document.addEventListener('DOMContentLoaded', () => {
             videoEl.src = video.url;
             videoEl.preload = 'metadata';
             videoEl.muted = true;
+            videoEl.setAttribute('playsinline', 'true');
+            videoEl.setAttribute('webkit-playsinline', 'true');
             
             const overlay = document.createElement('div');
             overlay.className = 'video-overlay';
@@ -716,6 +718,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         modalVideo.src = video.url;
         modalVideo.loop = false; // Отключаем стандартный loop
+        modalVideo.setAttribute('playsinline', 'true');
+        modalVideo.setAttribute('webkit-playsinline', 'true');
         modalVideo.load();
         
         // Удаляем старые обработчики события ended, если они есть
