@@ -147,6 +147,13 @@ body {
     width: 100%;
 }
 
+/* Ограничение до 3 колонок в мобильной версии */
+@media (max-width: 768px) {
+    .videos-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 /* Ограничение до 5 колонок в десктоп версии */
 @media (min-width: 1200px) {
     .videos-grid {

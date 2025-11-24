@@ -98,7 +98,6 @@
                     <i class="fas fa-shield"></i>
                     Ожидают модерации
                     <span class="moderation-title__count" id="moderationPendingIndicator" aria-live="polite">0 фото</span>
-                    <span class="moderation-title__count" id="moderationPendingVideosIndicator" aria-live="polite" style="display: inline-flex;">0 видео</span>
                 </h2>
                 <div class="moderation-grid">
                     <!-- Фото для модерации будут добавляться здесь -->
@@ -116,12 +115,8 @@
                             <span>Всего фото: <b id="analyticsTotalPhotos">0</b></span>
                         </div>
                         <div class="stat-item">
-                            <i class="fas fa-video"></i>
-                            <span>Всего видео: <b id="analyticsTotalVideos">0</b></span>
-                        </div>
-                        <div class="stat-item">
                             <i class="fas fa-database"></i>
-                            <span>Общий размер: <b id="analyticsTotalSize">0 ГБ</b></span>
+                            <span>Общий размер: <b id="analyticsTotalSize">0 МБ</b></span>
                         </div>
                         <div class="stat-item">
                             <i class="fas fa-calendar"></i>
@@ -415,11 +410,7 @@
 
     <div class="photo-modal" id="moderationModal">
         <button class="close-modal" type="button">&times;</button>
-        <img src="" alt="Фото на модерации" id="moderationModalImage" style="display: none;">
-        <video id="moderationModalVideo" controls style="display: none;">
-            <source src="" type="video/mp4">
-            Ваш браузер не поддерживает видео.
-        </video>
+        <img src="" alt="Фото на модерации" id="moderationModalImage">
     </div>
 
     <div id="notifications-container" class="notifications-container"></div>
