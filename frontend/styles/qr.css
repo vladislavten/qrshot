@@ -167,6 +167,26 @@ body.has-branding-image {
 .qr-instruction {
     color: #666;
     margin: 20px 0;
+    font-size: 1.3em;
+    font-weight: bold;
+    background: linear-gradient(90deg, #4a90e2, #1e3c72, #4a90e2);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-shift 3s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+    0% {
+        background-position: 0% center;
+    }
+    50% {
+        background-position: 100% center;
+    }
+    100% {
+        background-position: 0% center;
+    }
 }
 
 /* Скрываем старые кнопки */
