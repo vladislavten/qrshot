@@ -17,15 +17,22 @@
                 <h1 id="eventName"></h1>
                 <p class="event-date" id="eventDate"></p>
             </div>
-            <div id="qrcode"></div>
+            <div class="qrcode-wrapper">
+                <div id="qrcode"></div>
+            </div>
             <p class="qr-instruction">Отсканируйте QR-код для просмотра и загрузки фото</p>
-            <div class="actions">
-                <button id="downloadQR" class="action-btn">
-                    <i class="fas fa-download"></i> Скачать QR-код
+            <div class="qr-menu-container">
+                <button class="qr-menu-toggle" id="qrMenuToggle" aria-label="Меню действий">
+                    <i class="fas fa-ellipsis-v"></i>
                 </button>
-                <button id="printQR" class="action-btn">
-                    <i class="fas fa-print"></i> Распечатать
-                </button>
+                <div class="qr-menu-dropdown" id="qrMenuDropdown">
+                    <button id="downloadQR" class="qr-menu-item">
+                        <i class="fas fa-download"></i> Скачать QR-код
+                    </button>
+                    <button id="printQR" class="qr-menu-item">
+                        <i class="fas fa-print"></i> Распечатать
+                    </button>
+                </div>
             </div>
         </div>
     </div>

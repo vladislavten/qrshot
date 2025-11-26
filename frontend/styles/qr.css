@@ -52,6 +52,7 @@ body.has-branding-image {
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     text-align: center;
+    position: relative;
 }
 
 .event-info {
@@ -68,8 +69,13 @@ body.has-branding-image {
     font-size: 1.1em;
 }
 
-#qrcode {
+.qrcode-wrapper {
+    position: relative;
+    display: inline-block;
     margin: 30px auto;
+}
+
+#qrcode {
     padding: 20px;
     background: white;
     border-radius: 10px;
@@ -77,32 +83,93 @@ body.has-branding-image {
     display: inline-block;
 }
 
+.qr-menu-container {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 20;
+}
+
+.qr-menu-toggle {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(30, 60, 114, 0.9);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.qr-menu-toggle:hover {
+    background: rgba(42, 82, 152, 0.95);
+    transform: scale(1.1);
+}
+
+.qr-menu-toggle:active {
+    transform: scale(0.95);
+}
+
+.qr-menu-dropdown {
+    position: absolute;
+    bottom: 50px;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 180px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.qr-menu-container.active .qr-menu-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.qr-menu-item {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: white;
+    color: #1e3c72;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+    text-align: left;
+    font-size: 14px;
+}
+
+.qr-menu-item:hover {
+    background: #f5f5f5;
+    color: #2a5298;
+}
+
+.qr-menu-item:active {
+    background: #e8e8e8;
+}
+
+.qr-menu-item i {
+    width: 18px;
+    text-align: center;
+}
+
 .qr-instruction {
     color: #666;
     margin: 20px 0;
 }
 
+/* Скрываем старые кнопки */
 .actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 30px;
-}
-
-.action-btn {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    background: #1e3c72;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s;
-}
-
-.action-btn:hover {
-    background: #2a5298;
-    transform: translateY(-2px);
+    display: none;
 }

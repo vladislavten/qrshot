@@ -178,8 +178,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })();
     
+    // Управление меню из трех точек
+    const menuToggle = document.getElementById('qrMenuToggle');
+    const menuDropdown = document.getElementById('qrMenuDropdown');
+    const menuContainer = menuToggle.closest('.qr-menu-container');
+    
+    menuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuContainer.classList.toggle('active');
+    });
+    
+    // Закрытие меню при клике вне его
+    document.addEventListener('click', (e) => {
+        if (!menuContainer.contains(e.target)) {
+            menuContainer.classList.remove('active');
+        }
+    });
+    
+    // Закрытие меню после выбора действия
+    const closeMenu = () => {
+        menuContainer.classList.remove('active');
+    };
+    
     // Обработчик скачивания QR-кода
     document.getElementById('downloadQR').addEventListener('click', () => {
+        closeMenu();
         const src = document.getElementById('qrcode').dataset.qrDataUrl
             || document.querySelector('#qrcode canvas')?.toDataURL('image/png');
         if (!src) return;
@@ -210,6 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Обработчик печати
     document.getElementById('printQR').addEventListener('click', () => {
+        closeMenu();
         window.print();
     });
 });
