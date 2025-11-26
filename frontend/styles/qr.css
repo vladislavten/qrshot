@@ -2,20 +2,25 @@ body {
     margin: 0;
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     position: relative;
+    padding: 20px;
 }
 
 .qr-logo-container {
-    position: absolute;
-    top: 20px;
-    left: 20px;
+    position: static;
+    margin: 0 auto 20px auto;
     z-index: 10;
     max-width: 200px;
     max-height: 200px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .qr-logo {
@@ -28,11 +33,25 @@ body {
 }
 
 @media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
     .qr-logo-container {
-        top: 10px;
-        left: 10px;
+        margin: 0 auto 15px auto;
         max-width: 120px;
         max-height: 120px;
+    }
+    
+    .qr-container {
+        padding: 10px;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .qr-card {
+        padding: 20px;
+        margin-top: 0;
     }
 }
 

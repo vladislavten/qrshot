@@ -1047,13 +1047,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             const token = await ensureAdminToken();
             const backgroundFileInput = form.elements.backgroundFile;
             const backgroundHiddenInput = form.elements.backgroundImage;
-            let brandingBackground = backgroundHiddenInput?.value || '';
+            let brandingBackground = '';
 
             if (form.dataset.removeBackground === 'true') {
                 brandingBackground = '';
-            }
-
-            if (backgroundFileInput && backgroundFileInput.files && backgroundFileInput.files.length) {
+            } else if (backgroundFileInput && backgroundFileInput.files && backgroundFileInput.files.length) {
                 const uploadResult = await uploadBrandingBackground(eventId, backgroundFileInput.files[0]);
                 brandingBackground = uploadResult.path || '';
                 if (backgroundHiddenInput) backgroundHiddenInput.value = brandingBackground;
@@ -1061,6 +1059,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 setBrandingPreview(form, uploadResult.url || '');
                 backgroundFileInput.value = '';
                 form.dataset.removeBackground = 'false';
+            } else {
+                // Если не загружаем новый файл и не удаляем, оставляем текущее значение
+                const existingBackground = backgroundHiddenInput?.value || form.dataset.existingBackground || '';
+                if (existingBackground && form.dataset.removeBackground !== 'true') {
+                    brandingBackground = existingBackground;
+                }
             }
 
             const logoFileInput = form.elements.logoFile;
@@ -2685,6 +2689,7 @@ function openSettings(eventId) {
     if (backgroundFileInput) backgroundFileInput.value = '';
     if (backgroundHiddenInput) backgroundHiddenInput.value = '';
     form.dataset.removeBackground = 'false';
+    form.dataset.existingBackground = '';
     revokeBrandingPreviewUrl();
     setBrandingPreview(form, '');
 
@@ -2729,6 +2734,7 @@ function openSettings(eventId) {
             // Брендинг
             if (form.elements.primaryColor) form.elements.primaryColor.value = evt.branding_color || '#000000';
             if (form.elements.backgroundImage) form.elements.backgroundImage.value = evt.branding_background || '';
+            form.dataset.existingBackground = evt.branding_background || '';
             if (evt.branding_background_url) {
                 setBrandingPreview(form, evt.branding_background_url);
             } else {
