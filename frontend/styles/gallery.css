@@ -7,6 +7,7 @@
 html {
     overflow-x: hidden;
     width: 100%;
+    background: #000000; /* Черный фон для html */
 }
 
 body {
@@ -21,6 +22,7 @@ body {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    background: #000000 !important; /* Черный фон всегда для страницы галереи */
 }
 .gallery-container {
     position: relative;
@@ -33,12 +35,14 @@ body {
     flex: 1;
     display: flex;
     overflow-x: hidden;
+    background: transparent; /* Прозрачный фон, чтобы был виден черный фон body */
 }
 
 .gallery-inner {
     width: 100%;
     display: flex;
     flex-direction: column;
+    background: transparent; /* Прозрачный фон, чтобы был виден черный фон body */
 }
 
 .gallery-upload-progress {
@@ -268,10 +272,7 @@ body::before {
     position: fixed;
     inset: 0;
     z-index: -2;
-    background:
-        radial-gradient(circle at 18% 22%, rgba(255, 156, 206, 0.48) 0%, rgba(255, 156, 206, 0) 55%),
-        radial-gradient(circle at 78% 10%, rgba(115, 182, 255, 0.52) 0%, rgba(115, 182, 255, 0) 46%),
-        linear-gradient(180deg, #dae4ff 0%, #c8d6ff 60%, rgba(220, 230, 255, 0) 100%);
+    background: #000000; /* Черный фон вместо градиента */
     transform: translateZ(0);
     pointer-events: none;
 }
@@ -281,6 +282,7 @@ body::before {
     inset: 0;
     z-index: -1;
     overflow: hidden;
+    display: none; /* Скрываем градиентный фон, используем черный */
 }
 
 .gallery-backdrop::before,
@@ -313,8 +315,9 @@ body::before {
     inset: 0;
     z-index: -1;
     backdrop-filter: blur(28px);
-    background: rgba(255, 255, 255, 0.04);
+    background: transparent; /* Убираем белый оттенок, делаем прозрачным */
     pointer-events: none;
+    display: none; /* Скрываем overlay, чтобы не создавать серый оттенок */
 }
 
 body.has-branding-color::before,

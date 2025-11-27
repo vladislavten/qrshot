@@ -443,15 +443,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function applyGalleryBranding(color, backgroundUrl) {
-        // На странице галереи применяем только цвет из "Цветовая схема"
-        // Загруженный фон (backgroundUrl) игнорируется и применяется только на QR странице
+        // На странице галереи НЕ применяем цвет фона из брендинга
+        // Фон всегда остается черным
+        // Цвет фона применяется только на странице QR-кода
         document.body.classList.remove('has-branding-color', 'has-branding-image');
-        if (color && color.trim()) {
-            document.body.classList.add('has-branding-color');
-            document.body.style.background = color.trim();
-        } else {
-            document.body.style.background = defaultBodyBackground;
-        }
+        // Устанавливаем черный фон для страницы галереи
+        document.body.style.background = '#000000';
     }
 
     function getActiveClientStorageKey(eventId) {
