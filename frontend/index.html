@@ -157,12 +157,30 @@
         </div>
     </div>
 
+    <div class="modal" id="contactModal">
+        <div class="modal-content contact-modal">
+            <button class="close-modal" type="button" data-close-contact>&times;</button>
+            <h2>Оставить заявку</h2>
+            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">Заполните форму, и мы свяжемся с вами в ближайшее время</p>
+            <form id="contactForm">
+                <input type="text" name="name" placeholder="Ваше имя" required>
+                <input type="tel" name="phone" placeholder="Номер телефона" required>
+                <textarea name="message" placeholder="Ваше сообщение" rows="4" required></textarea>
+                <div id="recaptcha-container" style="margin: 15px 0;"></div>
+                <div class="contact-message" aria-live="polite"></div>
+                <button type="submit">Отправить заявку</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Футер будет вставлен автоматически через footer.js -->
     <footer class="footer"></footer>
+    <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit" async defer></script>
     <script src="js/footer.js"></script>
     <script src="js/brand.js"></script>
     <script src="js/config.js"></script>
     <script src="js/landing-auth.js"></script>
+    <script src="js/contact-form.js"></script>
 </body>
 </html>
 

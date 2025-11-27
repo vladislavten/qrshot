@@ -614,6 +614,105 @@ main {
     cursor: pointer;
 }
 
+.contact-modal {
+    max-width: 500px;
+    width: 90%;
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 30px 60px rgba(15, 32, 77, 0.25);
+    position: relative;
+}
+
+.contact-modal h2 {
+    margin: 0 0 8px;
+    text-align: center;
+    color: var(--primary);
+}
+
+.contact-modal input,
+.contact-modal textarea {
+    width: 100%;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    border: 1px solid #d6d9e5;
+    font-size: 15px;
+    font-family: inherit;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+.contact-modal textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.contact-modal input:focus,
+.contact-modal textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(30, 60, 114, 0.12);
+}
+
+.contact-modal button[type="submit"] {
+    width: 100%;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    font-size: 16px;
+}
+
+.contact-modal button[type="submit"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(30, 60, 114, 0.2);
+}
+
+.contact-modal button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.contact-message {
+    min-height: 20px;
+    font-size: 14px;
+    color: #d33b3b;
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.contact-message.success {
+    color: #1f7a4d;
+}
+
+.contact-modal .close-modal {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    border: none;
+    background: transparent;
+    font-size: 26px;
+    line-height: 1;
+    color: #9aa5c1;
+    cursor: pointer;
+}
+
+.contact-modal .close-modal:hover {
+    color: var(--primary);
+}
+
+#recaptcha-container {
+    display: flex;
+    justify-content: center;
+    margin: 15px 0;
+}
+
 .nav-links .auth-open-btn.nav-link {
     border: none;
     background: transparent;

@@ -424,14 +424,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Разделяем кнопки на админ-панель и создание мероприятия
     openButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            if (getAdminToken()) {
-                window.location.href = 'admin.html';
-                return;
+            const btnText = btn.textContent.trim();
+            const isAdminBtn = btnText.includes('Админ') || btnText.includes('Admin') || btnText.includes('Әкімшілік');
+            const isCreateBtn = btnText.includes('Создать') || btnText.includes('Create') || btnText.includes('құру');
+            
+            // Если кнопка "Админ-панель"
+            if (isAdminBtn) {
+                if (getAdminToken()) {
+                    window.location.href = 'admin.html';
+                } else {
+                    openModal();
+                }
+            } else if (isCreateBtn) {
+                // Для кнопок "Создать мероприятие" открываем форму заявки
+                if (typeof window.openContactModal === 'function') {
+                    window.openContactModal();
+                } else {
+                    const contactModal = document.getElementById('contactModal');
+                    if (contactModal) {
+                        contactModal.classList.add('open');
+                        document.body.classList.add('modal-open');
+                    }
+                }
+            } else {
+                // По умолчанию открываем форму заявки
+                if (typeof window.openContactModal === 'function') {
+                    window.openContactModal();
+                }
             }
-            openModal();
         });
     });
 

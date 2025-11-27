@@ -31,6 +31,7 @@ app.use('/api/photos', require('./routes/photos'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/contact', require('./routes/contact'));
 
 // Background schedulers
 startEventScheduler(db);
