@@ -612,6 +612,7 @@ router.put('/:id', auth, (req, res) => {
         const telegramEnabled = (body.telegram_enabled ?? body.telegramEnabled) ? 1 : 0;
         const telegramUsername = (body.telegram_username || body.telegramUsername || '').trim();
         const telegramThreshold = parseInt(body.telegram_threshold ?? body.telegramThreshold ?? 10, 10);
+        const viewPassword = (body.view_password || body.viewPassword || '').trim();
 
         const requireModeration = requireModerationRaw ? 1 : 0;
         let autoDeleteDays = parseInt(autoDeleteDaysRaw ?? 14, 10);
@@ -656,9 +657,10 @@ router.put('/:id', auth, (req, res) => {
                  auto_end_at = ?,
                  telegram_enabled = ?,
                  telegram_username = ?,
-                 telegram_threshold = ?
+                 telegram_threshold = ?,
+                 view_password = ?
              WHERE id = ?`,
-            [name, date, description, requireModeration, uploadAccess, viewAccess, autoDeleteDays, brandingColor, brandingBackground, brandingLogo, notifyBeforeDelete, scheduledStartAt, autoEndAt, telegramEnabled, telegramUsername, telegramThreshold, eventId],
+            [name, date, description, requireModeration, uploadAccess, viewAccess, autoDeleteDays, brandingColor, brandingBackground, brandingLogo, notifyBeforeDelete, scheduledStartAt, autoEndAt, telegramEnabled, telegramUsername, telegramThreshold, viewPassword, eventId],
             function(err) {
                 if (err) return res.status(500).json({ error: err.message });
                 if (this.changes === 0) return res.status(404).json({ error: 'Событие не найдено' });
@@ -681,6 +683,42 @@ router.put('/:id', auth, (req, res) => {
                 });
             }
         );
+    });
+});
+
+// Проверка пароля для доступа к галерее [public]
+router.post('/:id/check-password', (req, res) => {
+    const eventId = parseInt(req.params.id, 10);
+    if (!eventId || !Number.isFinite(eventId)) {
+        return res.status(400).json({ error: 'Неверный идентификатор события' });
+    }
+
+    const { password } = req.body || {};
+    if (!password || typeof password !== 'string') {
+        return res.status(400).json({ error: 'Пароль не указан' });
+    }
+
+    db.get(`SELECT view_access, view_password FROM events WHERE id = ?`, [eventId], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (!row) {
+            return res.status(404).json({ error: 'Событие не найдено' });
+        }
+
+        if (row.view_access !== 'private') {
+            return res.status(400).json({ error: 'Доступ по паролю не включен для этого события' });
+        }
+
+        if (!row.view_password || row.view_password.trim() === '') {
+            return res.status(400).json({ error: 'Пароль не установлен для этого события' });
+        }
+
+        if (row.view_password.trim() === password.trim()) {
+            return res.json({ success: true, message: 'Пароль верный' });
+        } else {
+            return res.status(401).json({ error: 'Неверный пароль' });
+        }
     });
 });
 

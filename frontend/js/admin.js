@@ -1130,6 +1130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 require_moderation: form.elements.requireModeration.checked ? 1 : 0,
                 upload_access: 'all', // Всегда разрешаем загрузку по ссылке
                 view_access: form.elements.viewAccess?.value || 'public',
+                view_password: form.elements.viewPassword?.value || '',
                 auto_delete_days: parseInt(form.elements.deleteAfter?.value || '14', 10),
                 notify_before_delete: form.elements.notifyBeforeDelete?.checked ? 1 : 0,
                 branding_color: form.elements.primaryColor?.value || '',
@@ -1215,6 +1216,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 settingsForm.dataset.removeLogo = 'true';
             });
         }
+    }
+
+    // Показ/скрытие поля пароля в зависимости от типа доступа
+    const viewAccessSelect = document.getElementById('viewAccessSelect');
+    const viewPasswordGroup = document.querySelector('.view-password-group');
+    if (viewAccessSelect && viewPasswordGroup) {
+        const togglePasswordField = () => {
+            viewPasswordGroup.style.display = viewAccessSelect.value === 'private' ? 'block' : 'none';
+        };
+        viewAccessSelect.addEventListener('change', togglePasswordField);
+        togglePasswordField(); // Инициализация при загрузке
     }
 
     // Вкладки настроек
@@ -2727,7 +2739,17 @@ function openSettings(eventId) {
             if (form.elements.eventDescription) form.elements.eventDescription.value = evt.description || '';
             // Приватность
             form.elements.requireModeration.checked = Boolean(evt.require_moderation);
-            if (form.elements.viewAccess) form.elements.viewAccess.value = evt.view_access || 'public';
+            if (form.elements.viewAccess) {
+                form.elements.viewAccess.value = evt.view_access || 'public';
+                // Обновляем видимость поля пароля
+                const viewPasswordGroup = form.querySelector('.view-password-group');
+                if (viewPasswordGroup) {
+                    viewPasswordGroup.style.display = form.elements.viewAccess.value === 'private' ? 'block' : 'none';
+                }
+            }
+            if (form.elements.viewPassword) {
+                form.elements.viewPassword.value = evt.view_password || '';
+            }
             // Автоудаление
             if (form.elements.deleteAfter) form.elements.deleteAfter.value = String(evt.auto_delete_days || 14);
             if (form.elements.notifyBeforeDelete) form.elements.notifyBeforeDelete.checked = Boolean(evt.notify_before_delete);

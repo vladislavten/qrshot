@@ -322,10 +322,16 @@
                     </div>
                     <div class="form-group">
                         <label>Доступ к просмотру:</label>
-                        <select name="viewAccess">
+                        <select name="viewAccess" id="viewAccessSelect">
                             <option value="public">Публичный</option>
                             <option value="private">По паролю</option>
                         </select>
+                    </div>
+
+                    <div class="form-group view-password-group" style="display: none;">
+                        <label>Пароль для доступа к галерее:</label>
+                        <input type="password" name="viewPassword" id="viewPasswordInput" placeholder="Введите пароль" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid rgba(30,60,114,0.15);">
+                        <small style="display: block; margin-top: 4px; color: #666; font-size: 12px;">Пароль потребуется для просмотра галереи. Действителен 3 часа после ввода.</small>
                     </div>
 
                     <div class="form-group">

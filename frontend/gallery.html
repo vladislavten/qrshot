@@ -73,6 +73,21 @@
     <footer class="footer"></footer>
     <script src="js/footer.js"></script>
 
+    <!-- Модальное окно для ввода пароля -->
+    <div class="password-modal" id="passwordModal" style="display: none;">
+        <div class="password-modal-content">
+            <h2>🔒 Галерея защищена паролем</h2>
+            <p>Для доступа к галерее необходимо ввести пароль.</p>
+            <form id="passwordForm">
+                <input type="password" id="passwordInput" placeholder="Введите пароль" required autofocus>
+                <div id="passwordError" class="password-error" style="display: none;"></div>
+                <div class="password-modal-buttons">
+                    <button type="submit" class="password-submit-btn">Войти</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Модальное окно для просмотра фото и видео -->
     <div class="photo-modal" id="photoModal">
         <button class="close-modal">&times;</button>

@@ -77,6 +77,7 @@ db.serialize(() => {
     db.run(`ALTER TABLE events ADD COLUMN telegram_username TEXT`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN telegram_threshold INTEGER DEFAULT 10`, () => {});
     db.run(`ALTER TABLE events ADD COLUMN telegram_enabled INTEGER DEFAULT 0`, () => {});
+    db.run(`ALTER TABLE events ADD COLUMN view_password TEXT`, () => {});
 
     // Таблица для хранения соответствия Telegram username -> chat_id
     db.run(`CREATE TABLE IF NOT EXISTS telegram_users (

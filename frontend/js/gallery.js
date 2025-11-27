@@ -772,6 +772,82 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Функции для работы с паролем
+    function getPasswordAuthKey(eventId) {
+        return `galleryPasswordAuth:${eventId}`;
+    }
+
+    function isPasswordAuthorized(eventId) {
+        const key = getPasswordAuthKey(eventId);
+        try {
+            const stored = sessionStorage.getItem(key);
+            if (!stored) return false;
+            const { timestamp } = JSON.parse(stored);
+            const now = Date.now();
+            const threeHours = 3 * 60 * 60 * 1000; // 3 часа в миллисекундах
+            return (now - timestamp) < threeHours;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function savePasswordAuth(eventId) {
+        const key = getPasswordAuthKey(eventId);
+        try {
+            sessionStorage.setItem(key, JSON.stringify({ timestamp: Date.now() }));
+        } catch (_) {
+            // Игнорируем ошибки
+        }
+    }
+
+    function showPasswordModal() {
+        const passwordModal = document.getElementById('passwordModal');
+        if (passwordModal) {
+            passwordModal.style.display = 'flex';
+            const passwordInput = document.getElementById('passwordInput');
+            if (passwordInput) {
+                passwordInput.focus();
+            }
+        }
+    }
+
+    function hidePasswordModal() {
+        const passwordModal = document.getElementById('passwordModal');
+        if (passwordModal) {
+            passwordModal.style.display = 'none';
+        }
+    }
+
+    async function checkPassword(eventId, password) {
+        try {
+            const res = await fetch(`${API_CONFIG.baseUrl}/events/${encodeURIComponent(eventId)}/check-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                savePasswordAuth(eventId);
+                hidePasswordModal();
+                return true;
+            } else {
+                const errorDiv = document.getElementById('passwordError');
+                if (errorDiv) {
+                    errorDiv.textContent = data.error || 'Неверный пароль';
+                    errorDiv.style.display = 'block';
+                }
+                return false;
+            }
+        } catch (error) {
+            const errorDiv = document.getElementById('passwordError');
+            if (errorDiv) {
+                errorDiv.textContent = 'Ошибка при проверке пароля';
+                errorDiv.style.display = 'block';
+            }
+            return false;
+        }
+    }
+
     async function loadEventHeader() {
         const eventId = getEventIdFromLocation();
         if (!eventId) return;
@@ -783,6 +859,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             const evt = await res.json();
+            
+            // Проверяем, требуется ли пароль
+            if (evt.view_access === 'private') {
+                if (!isPasswordAuthorized(eventId)) {
+                    showPasswordModal();
+                    return; // Не загружаем галерею до ввода пароля
+                }
+            }
             if (headerTitle) {
                 headerTitle.textContent = evt?.name ? evt.name : `Событие #${eventId}`;
             }
@@ -1474,6 +1558,40 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('orientationchange', () => {
         scheduleMasonryLayout();
     });
+
+    // Обработчик формы ввода пароля
+    const passwordForm = document.getElementById('passwordForm');
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const eventId = getEventIdFromLocation();
+            if (!eventId) return;
+            const passwordInput = document.getElementById('passwordInput');
+            const password = passwordInput?.value || '';
+            if (!password) return;
+            
+            const errorDiv = document.getElementById('passwordError');
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+            }
+            
+            const success = await checkPassword(eventId, password);
+            if (success) {
+                // Перезагружаем событие и галерею после успешной авторизации
+                loadEventHeader();
+                loadPhotos();
+                const initialEventId = getEventIdFromLocation();
+                if (initialEventId) {
+                    startActiveTracking(initialEventId);
+                }
+            } else {
+                if (passwordInput) {
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            }
+        });
+    }
 
     initInfiniteScroll();
     loadEventHeader();
