@@ -9,10 +9,22 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Глобальная функция для загрузки reCaptcha
-    window.onRecaptchaLoad = function() {
+    // Функция для инициализации reCAPTCHA (вызывается только при открытии модального окна)
+    function initRecaptcha() {
         const container = document.getElementById('recaptcha-container');
-        if (container && typeof grecaptcha !== 'undefined' && recaptchaWidgetId === null) {
+        if (!container) return;
+        
+        // Если уже инициализирована, не делаем ничего
+        if (recaptchaWidgetId !== null) return;
+        
+        // Проверяем готовность reCAPTCHA
+        function tryRender() {
+            if (typeof grecaptcha === 'undefined' || !grecaptcha.render) {
+                // Если еще не загружена, ждем
+                setTimeout(tryRender, 200);
+                return;
+            }
+            
             try {
                 // Очищаем контейнер перед рендерингом
                 container.innerHTML = '';
@@ -22,30 +34,35 @@ document.addEventListener('DOMContentLoaded', () => {
                     'size': 'normal'
                 });
             } catch (error) {
-                console.error('reCAPTCHA render error:', error);
-                // Если ошибка рендеринга, сбрасываем widgetId чтобы попробовать снова
-                recaptchaWidgetId = null;
+                // Игнорируем ошибки рендеринга, если виджет уже создан
+                if (error.message && error.message.includes('already been rendered')) {
+                    // Виджет уже создан, получаем его ID
+                    const existingWidget = container.querySelector('[data-sitekey]');
+                    if (existingWidget) {
+                        // Пытаемся найти существующий виджет
+                        recaptchaWidgetId = 0; // Используем первый виджет
+                    }
+                } else {
+                    console.error('reCAPTCHA render error:', error);
+                    recaptchaWidgetId = null;
+                }
             }
         }
-    };
-
-    // Если reCAPTCHA уже загружена, инициализируем сразу
-    if (typeof grecaptcha !== 'undefined') {
-        if (grecaptcha.ready) {
-            grecaptcha.ready(() => {
-                if (typeof window.onRecaptchaLoad === 'function') {
-                    window.onRecaptchaLoad();
-                }
-            });
+        
+        // Используем grecaptcha.ready если доступно
+        if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
+            grecaptcha.ready(tryRender);
         } else {
-            // Если ready недоступен, пробуем через небольшую задержку
-            setTimeout(() => {
-                if (typeof window.onRecaptchaLoad === 'function') {
-                    window.onRecaptchaLoad();
-                }
-            }, 500);
+            // Иначе пробуем через небольшую задержку
+            setTimeout(tryRender, 300);
         }
     }
+
+    // Глобальная функция для загрузки reCaptcha (не инициализируем сразу)
+    window.onRecaptchaLoad = function() {
+        // Не инициализируем reCAPTCHA при загрузке страницы
+        // Она будет инициализирована только при открытии модального окна
+    };
 
     function setMessage(text, type = 'error') {
         messageEl.textContent = text || '';
@@ -59,28 +76,26 @@ document.addEventListener('DOMContentLoaded', () => {
         setMessage('');
         contactForm.reset();
         
-        // Инициализируем reCAPTCHA при открытии модального окна, если еще не инициализирована
-        const container = document.getElementById('recaptcha-container');
-        if (container && recaptchaWidgetId === null && typeof grecaptcha !== 'undefined') {
-            if (grecaptcha.ready) {
-                grecaptcha.ready(() => {
-                    try {
-                        container.innerHTML = '';
-                        recaptchaWidgetId = grecaptcha.render('recaptcha-container', {
-                            'sitekey': '6Leo4BksAAAAAMExLM0getPEHFAbLp3obeQW06rw',
-                            'theme': 'light'
-                        });
-                    } catch (error) {
-                        console.error('reCAPTCHA render error on modal open:', error);
-                    }
-                });
-            }
-        } else if (recaptchaWidgetId !== null && typeof grecaptcha !== 'undefined') {
-            grecaptcha.reset(recaptchaWidgetId);
-        }
-        
         contactModal.classList.add('open');
         document.body.classList.add('modal-open');
+        
+        // Инициализируем reCAPTCHA только после открытия модального окна
+        // Используем задержку, чтобы DOM обновился и reCAPTCHA была готова
+        setTimeout(() => {
+            if (recaptchaWidgetId !== null && typeof grecaptcha !== 'undefined') {
+                // Если уже инициализирована, просто сбрасываем
+                try {
+                    grecaptcha.reset(recaptchaWidgetId);
+                } catch (e) {
+                    // Если ошибка сброса, переинициализируем
+                    recaptchaWidgetId = null;
+                    initRecaptcha();
+                }
+            } else {
+                // Инициализируем впервые
+                initRecaptcha();
+            }
+        }, 300);
     }
 
     function closeModal() {
