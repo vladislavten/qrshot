@@ -1222,6 +1222,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const viewAccessSelect = document.getElementById('viewAccessSelect');
     const viewPasswordGroup = document.querySelector('.view-password-group');
     if (viewAccessSelect && viewPasswordGroup) {
+        // Устанавливаем значение по умолчанию, если оно не установлено
+        if (!viewAccessSelect.value || viewAccessSelect.value === '') {
+            viewAccessSelect.value = 'public';
+        }
         const togglePasswordField = () => {
             viewPasswordGroup.style.display = viewAccessSelect.value === 'private' ? 'block' : 'none';
         };
@@ -2663,6 +2667,24 @@ function openSettings(eventId) {
     // Сохраняем id события на форме — пригодится при сохранении
     form.dataset.eventId = String(eventId);
     
+    // Сразу устанавливаем значение по умолчанию для доступа к просмотру
+    // Это важно, чтобы значение было установлено до загрузки данных из API
+    const viewAccessSelect = form.elements.viewAccess;
+    if (viewAccessSelect) {
+        // Устанавливаем значение несколькими способами для надежности
+        viewAccessSelect.value = 'public';
+        // Также устанавливаем через selectedIndex, если value не сработал
+        const publicOption = Array.from(viewAccessSelect.options).find(opt => opt.value === 'public');
+        if (publicOption) {
+            publicOption.selected = true;
+            viewAccessSelect.selectedIndex = publicOption.index;
+        }
+        const viewPasswordGroup = form.querySelector('.view-password-group');
+        if (viewPasswordGroup) {
+            viewPasswordGroup.style.display = 'none';
+        }
+    }
+    
     // Обработчик для checkbox Telegram
     const telegramCheckbox = form.elements.telegramEnabled;
     if (telegramCheckbox) {
@@ -2712,6 +2734,18 @@ function openSettings(eventId) {
     revokeBrandingLogoPreviewUrl();
     setBrandingLogoPreview(form, '');
 
+    // Устанавливаем значения по умолчанию
+    if (form.elements.viewAccess) {
+        form.elements.viewAccess.value = 'public';
+        const viewPasswordGroup = form.querySelector('.view-password-group');
+        if (viewPasswordGroup) {
+            viewPasswordGroup.style.display = 'none';
+        }
+    }
+    if (form.elements.viewPassword) {
+        form.elements.viewPassword.value = '';
+    }
+
     // Префилл значений из API
     (async () => {
         try {
@@ -2740,11 +2774,16 @@ function openSettings(eventId) {
             // Приватность
             form.elements.requireModeration.checked = Boolean(evt.require_moderation);
             if (form.elements.viewAccess) {
-                form.elements.viewAccess.value = evt.view_access || 'public';
+                // Используем значение из API, если оно есть и не пустое, иначе 'public'
+                let viewAccessValue = 'public'; // Значение по умолчанию
+                if (evt.view_access && typeof evt.view_access === 'string' && evt.view_access.trim() !== '') {
+                    viewAccessValue = evt.view_access.trim();
+                }
+                form.elements.viewAccess.value = viewAccessValue;
                 // Обновляем видимость поля пароля
                 const viewPasswordGroup = form.querySelector('.view-password-group');
                 if (viewPasswordGroup) {
-                    viewPasswordGroup.style.display = form.elements.viewAccess.value === 'private' ? 'block' : 'none';
+                    viewPasswordGroup.style.display = viewAccessValue === 'private' ? 'block' : 'none';
                 }
             }
             if (form.elements.viewPassword) {
@@ -2777,9 +2816,47 @@ function openSettings(eventId) {
             if (form.elements.telegramUsername) form.elements.telegramUsername.value = evt.telegram_username || '';
             if (form.elements.telegramThreshold) form.elements.telegramThreshold.value = evt.telegram_threshold || 10;
         } catch (_) {
-            // При ошибке просто открываем модалку с дефолтными значениями
+            // При ошибке устанавливаем значения по умолчанию
+            if (form.elements.viewAccess) {
+                form.elements.viewAccess.value = 'public';
+                const viewPasswordGroup = form.querySelector('.view-password-group');
+                if (viewPasswordGroup) {
+                    viewPasswordGroup.style.display = 'none';
+                }
+            }
         } finally {
-            settingsModal.style.display = 'flex';
+            // Убеждаемся, что значение установлено перед открытием модального окна
+            const viewAccessSelect = form.elements.viewAccess;
+            if (viewAccessSelect) {
+                // Если значение не установлено или пустое, устанавливаем 'public'
+                const currentValue = viewAccessSelect.value;
+                if (!currentValue || currentValue === '' || currentValue === 'null' || currentValue === 'undefined') {
+                    viewAccessSelect.value = 'public';
+                }
+                // Обновляем видимость поля пароля
+                const viewPasswordGroup = form.querySelector('.view-password-group');
+                if (viewPasswordGroup) {
+                    viewPasswordGroup.style.display = viewAccessSelect.value === 'private' ? 'block' : 'none';
+                }
+            }
+            // Используем setTimeout, чтобы убедиться, что значение установлено перед открытием модального окна
+            setTimeout(() => {
+                // Финальная проверка перед открытием
+                const finalViewAccessSelect = form.elements.viewAccess;
+                if (finalViewAccessSelect) {
+                    const finalValue = finalViewAccessSelect.value;
+                    if (!finalValue || finalValue === '' || finalValue === 'null' || finalValue === 'undefined') {
+                        finalViewAccessSelect.value = 'public';
+                        // Также устанавливаем через selectedIndex
+                        const publicOption = Array.from(finalViewAccessSelect.options).find(opt => opt.value === 'public');
+                        if (publicOption) {
+                            publicOption.selected = true;
+                            finalViewAccessSelect.selectedIndex = publicOption.index;
+                        }
+                    }
+                }
+                settingsModal.style.display = 'flex';
+            }, 0);
         }
     })();
 }

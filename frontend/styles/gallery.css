@@ -145,6 +145,19 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 8px;
     width: 100%;
+    position: relative;
+    box-sizing: border-box;
+    padding: 24px 0 16px;
+    min-height: 1px;
+}
+
+.videos-grid.is-empty {
+    position: static;
+    height: auto !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 0;
 }
 
 /* Ограничение до 3 колонок в мобильной версии */

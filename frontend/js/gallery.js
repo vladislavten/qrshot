@@ -652,9 +652,18 @@ document.addEventListener('DOMContentLoaded', () => {
         videosGrid.innerHTML = '';
         
         if (videos.length === 0) {
-            videosGrid.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Видео пока нет</p>';
+            videosGrid.classList.add('is-empty');
+            videosGrid.innerHTML = `
+                <div class="empty-gallery" role="status">
+                    <div class="empty-emoji" aria-hidden="true">😢</div>
+                    <h2 class="empty-title">Тут пока нет ни одного видео</h2>
+                    <p class="empty-subtitle">Стань первым, кто загрузит свое видео!</p>
+                </div>
+            `;
             return;
         }
+        
+        videosGrid.classList.remove('is-empty');
         
         videos.forEach((video, index) => {
             const videoItem = document.createElement('div');
@@ -1558,40 +1567,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('orientationchange', () => {
         scheduleMasonryLayout();
     });
-
-    // Обработчик формы ввода пароля
-    const passwordForm = document.getElementById('passwordForm');
-    if (passwordForm) {
-        passwordForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const eventId = getEventIdFromLocation();
-            if (!eventId) return;
-            const passwordInput = document.getElementById('passwordInput');
-            const password = passwordInput?.value || '';
-            if (!password) return;
-            
-            const errorDiv = document.getElementById('passwordError');
-            if (errorDiv) {
-                errorDiv.style.display = 'none';
-            }
-            
-            const success = await checkPassword(eventId, password);
-            if (success) {
-                // Перезагружаем событие и галерею после успешной авторизации
-                loadEventHeader();
-                loadPhotos();
-                const initialEventId = getEventIdFromLocation();
-                if (initialEventId) {
-                    startActiveTracking(initialEventId);
-                }
-            } else {
-                if (passwordInput) {
-                    passwordInput.value = '';
-                    passwordInput.focus();
-                }
-            }
-        });
-    }
 
     // Обработчик формы ввода пароля
     const passwordForm = document.getElementById('passwordForm');
