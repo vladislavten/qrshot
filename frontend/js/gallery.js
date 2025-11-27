@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerDate = document.getElementById('eventDate');
     const modalLikeBtn = document.getElementById('modalLikeBtn');
     const modalLikeCount = document.getElementById('modalLikeCount');
-    const shareButtonsContainer = document.getElementById('modalShareButtons');
     const shareToggleBtn = document.getElementById('modalShareToggle');
     const downloadBtn = document.getElementById('modalDownloadBtn');
     const uploadBtn = document.getElementById('uploadBtn');
@@ -381,49 +380,79 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function clearShareLinks() {
-        if (!shareButtonsContainer) return;
-        shareButtonsContainer.querySelectorAll('.share-btn').forEach(btn => {
-            btn.removeAttribute('data-share-url');
-        });
-        closeShareMenu();
-    }
-
-    function openShareMenu() {
-        if (!shareButtonsContainer) return;
-        shareButtonsContainer.hidden = false;
-    }
-
-    function closeShareMenu() {
-        if (!shareButtonsContainer) return;
-        shareButtonsContainer.hidden = true;
-    }
-
     setUploadProgress(0, false);
 
-    function updateShareButtons(photo) {
-        if (!shareButtonsContainer || !photo) return;
-        const shareUrl = photo.url || photo.originalUrl || '';
-        const pageUrl = `${window.location.origin}/gallery.html?event=${encodeURIComponent(getEventIdFromLocation() || '')}`;
-        const caption = `Посмотрите фото события: ${pageUrl}`;
-        closeShareMenu();
-        shareButtonsContainer.querySelectorAll('.share-btn').forEach(btn => {
-            const target = btn.dataset.shareTarget;
-            let url = '';
-            if (target === 'instagram') {
-                url = `https://www.instagram.com/?url=${encodeURIComponent(shareUrl)}`;
-            } else if (target === 'tiktok') {
-                url = `https://www.tiktok.com/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(caption)}`;
-            } else if (target === 'whatsapp') {
-                // Используем прямой URL к изображению - WhatsApp автоматически предпросмотрит его
-                url = `https://api.whatsapp.com/send?text=${encodeURIComponent(caption + '\n\n' + shareUrl)}`;
-            } else if (target === 'telegram') {
-                url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(caption)}`;
+    // Функция для поделиться через Web Share API
+    async function shareContent() {
+        if (!navigator.share) {
+            // Если Web Share API не поддерживается, показываем сообщение
+            alert('Функция "Поделиться" доступна только на мобильных устройствах');
+            return;
+        }
+
+        try {
+            let file = null;
+            let title = '';
+            let text = '';
+            const pageUrl = `${window.location.origin}/gallery.html?event=${encodeURIComponent(getEventIdFromLocation() || '')}`;
+
+            if (currentTab === 'photo') {
+                const photo = photos[currentPhotoIndex];
+                if (!photo) return;
+                
+                const imageUrl = photo.originalUrl || photo.url;
+                if (!imageUrl) return;
+
+                // Загружаем изображение как blob
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                const filename = photo.original_name || `photo-${photo.id || currentPhotoIndex + 1}.jpg`;
+                file = new File([blob], filename, { type: blob.type });
+                title = 'Фото из галереи события';
+                text = `Посмотрите это фото!\n\n${pageUrl}`;
+            } else {
+                const video = videos[currentPhotoIndex];
+                if (!video) return;
+                
+                const videoUrl = video.url;
+                if (!videoUrl) return;
+
+                // Загружаем видео как blob
+                const response = await fetch(videoUrl);
+                const blob = await response.blob();
+                const filename = video.original_name || `video-${video.id || currentPhotoIndex + 1}.mp4`;
+                file = new File([blob], filename, { type: blob.type });
+                title = 'Видео из галереи события';
+                text = `Посмотрите это видео!\n\n${pageUrl}`;
             }
-            btn.dataset.shareUrl = url;
-            // Сохраняем URL изображения для Web Share API
-            btn.dataset.shareImageUrl = shareUrl;
-        });
+
+            // Проверяем, можно ли поделиться файлом
+            if (navigator.canShare && file && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: title,
+                    text: text
+                });
+            } else if (navigator.canShare && navigator.canShare({ title: title, text: text, url: pageUrl })) {
+                // Если файл нельзя поделиться, делимся ссылкой
+                await navigator.share({
+                    title: title,
+                    text: text,
+                    url: pageUrl
+                });
+            } else {
+                // Fallback: делимся только текстом и ссылкой
+                await navigator.share({
+                    title: title,
+                    text: text
+                });
+            }
+        } catch (error) {
+            // Пользователь отменил шаринг или произошла ошибка
+            if (error.name !== 'AbortError') {
+                console.error('Ошибка при попытке поделиться:', error);
+            }
+        }
     }
 
     function getEventIdFromLocation() {
@@ -1030,7 +1059,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         updateModalLikeDisplay();
-        updateShareButtons(photos[index]);
     };
 
     // Навигация по фото/видео
@@ -1078,7 +1106,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 modal.classList.remove('is-open');
             }
             document.body.style.overflow = '';
-            clearShareLinks();
         };
     }
 
@@ -1098,54 +1125,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (shareButtonsContainer) {
-        shareButtonsContainer.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.share-btn');
-            if (!btn) return;
-            const target = btn.dataset.shareTarget;
-            const shareUrl = btn.dataset.shareUrl;
-            const imageUrl = btn.dataset.shareImageUrl;
-            
-            // Для WhatsApp на мобильных устройствах используем Web Share API для отправки изображения
-            if (target === 'whatsapp' && navigator.share && imageUrl) {
-                try {
-                    // Загружаем изображение как blob для Web Share API
-                    const response = await fetch(imageUrl);
-                    const blob = await response.blob();
-                    const file = new File([blob], 'photo.jpg', { type: blob.type });
-                    
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: 'Фото из галереи события',
-                            text: 'Посмотрите это фото!'
-                        });
-                        closeShareMenu();
-                        return;
-                    }
-                } catch (shareError) {
-                    // Если Web Share API не сработал, используем обычный способ
-                    console.log('Web Share API не доступен, используем обычный способ:', shareError);
-                }
-            }
-            
-            // Обычный способ - открываем URL
-            if (shareUrl) {
-                window.open(shareUrl, '_blank', 'noopener');
-            }
-            closeShareMenu();
-        });
-    }
-
     if (shareToggleBtn) {
-        shareToggleBtn.addEventListener('click', (e) => {
+        shareToggleBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (!shareButtonsContainer) return;
-            if (shareButtonsContainer.hidden) {
-                openShareMenu();
-            } else {
-                closeShareMenu();
-            }
+            await shareContent();
         });
     }
 
@@ -1177,12 +1160,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    document.addEventListener('click', (e) => {
-        if (!shareButtonsContainer || shareButtonsContainer.hidden) return;
-        if (!e.target.closest('.modal-share-wrapper')) {
-            closeShareMenu();
-        }
-    });
 
     modal.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 1) return;
