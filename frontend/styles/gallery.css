@@ -484,6 +484,7 @@ body.has-branding-image {
 }
 
 
+.gallery-controls .live-wall-btn,
 .gallery-controls .download-all,
 .gallery-controls .upload-btn {
     display: inline-flex;
@@ -497,6 +498,38 @@ body.has-branding-image {
     transition: transform 0.2s, box-shadow 0.3s;
     white-space: nowrap;
     flex-shrink: 0;
+}
+
+.gallery-controls .live-wall-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(238, 90, 111, 0.3);
+}
+
+.gallery-controls .live-wall-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(238, 90, 111, 0.4);
+}
+
+.gallery-controls .live-wall-btn:active {
+    transform: translateY(0);
+}
+
+.gallery-controls .live-wall-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(238, 90, 111, 0.3);
+}
+
+.gallery-controls .live-wall-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(238, 90, 111, 0.4);
+}
+
+.gallery-controls .live-wall-btn:active {
+    transform: translateY(0);
 }
 
 .gallery-controls .download-all {

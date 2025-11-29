@@ -236,4 +236,18 @@ document.addEventListener('DOMContentLoaded', () => {
         closeMenu();
         window.print();
     });
+    
+    // Обработчик перехода на Live Фотостену
+    document.getElementById('liveWallQR').addEventListener('click', () => {
+        closeMenu();
+        if (eventId) {
+            // Добавляем параметр from=qr, чтобы знать, откуда пришли
+            const liveWallUrl = `live-wall.html#event=${encodeURIComponent(eventId)}&from=qr`;
+            console.log('Navigating to live wall with event ID:', eventId, 'URL:', liveWallUrl);
+            window.location.href = liveWallUrl;
+        } else {
+            console.warn('Event ID not found, cannot navigate to live wall');
+            alert('Не удалось определить событие для перехода на фотостену');
+        }
+    });
 });

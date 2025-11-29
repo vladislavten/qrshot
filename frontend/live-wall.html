@@ -3,20 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Фотостена - QR SHOT</title>
+    <title>Live Фотостена - QR SHOT</title>
     <link rel="stylesheet" href="styles/live-wall.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="live-wall">
-        <div class="wall-header">
-            <h1 class="event-name">фотостена</h1>
-            <div class="photos-counter">
-                <i class="fas fa-image"></i>
-                <span id="photoCount">0</span> фото
+    <div class="live-wall-container">
+        <div class="live-wall-header">
+            <button class="back-btn" id="backBtn" title="Вернуться в галерею">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-info">
+                <h1 class="event-name" id="eventName">Live Фотостена</h1>
+                <div class="photos-counter">
+                    <i class="fas fa-image"></i>
+                    <span id="photoCount">0</span> фото
+                </div>
             </div>
         </div>
-        <div class="photos-grid" id="liveWall"></div>
+        <div class="live-wall-content" id="liveWallContent">
+            <div class="loading-screen" id="loadingScreen">
+                <div class="loading-spinner"></div>
+                <p>Загрузка фотостены...</p>
+            </div>
+            <div class="error-screen" id="errorScreen" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p id="errorMessage">Недостаточно фотографий для отображения фотостены</p>
+                <p class="error-hint">Необходимо минимум 5 фотографий</p>
+            </div>
+            <div class="photo-display" id="photoDisplay" style="display: none;">
+                <img id="currentPhoto" src="" alt="Photo" />
+            </div>
+        </div>
     </div>
 
     <script src="js/config.js"></script>

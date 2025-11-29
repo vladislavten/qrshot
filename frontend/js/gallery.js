@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const shareToggleBtn = document.getElementById('modalShareToggle');
     const downloadBtn = document.getElementById('modalDownloadBtn');
     const uploadBtn = document.getElementById('uploadBtn');
+    const liveWallBtn = document.getElementById('liveWallBtn');
     const uploadBtnText = document.getElementById('uploadBtnText');
     const fileInput = document.getElementById('fileInput');
     const sortSelect = document.querySelector('.sort-select');
@@ -639,8 +640,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentSort = sortSelect?.value || 'newest';
             sortPhotos(currentSort);
             renderPhotos();
+            updateLiveWallButton();
         } catch (_) {
             // noop
+        }
+    }
+
+    function updateLiveWallButton() {
+        if (!liveWallBtn) return;
+        const eventId = getEventIdFromLocation();
+        console.log('updateLiveWallButton - eventId:', eventId, 'photos.length:', photos.length);
+        if (!eventId) {
+            liveWallBtn.style.display = 'none';
+            return;
+        }
+        // Показываем кнопку только если фото больше 5
+        if (photos.length > 5) {
+            liveWallBtn.style.display = 'flex';
+            liveWallBtn.onclick = () => {
+                // Добавляем параметр from=gallery, чтобы знать, откуда пришли
+                const liveWallUrl = `live-wall.html#event=${encodeURIComponent(eventId)}&from=gallery`;
+                console.log('Navigating to live wall:', liveWallUrl, 'eventId:', eventId);
+                window.location.href = liveWallUrl;
+            };
+        } else {
+            liveWallBtn.style.display = 'none';
         }
     }
 
@@ -1340,6 +1364,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (currentTab === 'photo') {
                     await loadPhotos();
+                    updateLiveWallButton();
                 } else {
                     await loadVideos();
                 }
