@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Инструкция по использованию - QR SHOT</title>
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/landing.css">
+    <link rel="stylesheet" href="styles/help.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="js/footer.js"></script>
+</head>
+<body id="top">
+    <header class="help-header">
+        <nav class="help-nav">
+            <a class="app-logo" href="index.html">
+                <span class="app-logo-icon" data-brand-icon>QR</span>
+                <span class="app-logo-text">SHOT</span>
+            </a>
+            <button class="help-nav-toggle" type="button" aria-expanded="false" aria-controls="helpNavControls" aria-label="Открыть меню">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="help-nav-links" id="helpNavControls">
+                <a href="index.html" class="help-nav-link">
+                    <i class="fas fa-home"></i> Главная
+                </a>
+                <a href="admin.html" class="help-nav-link">
+                    <i class="fas fa-cog"></i> Админ-панель
+                </a>
+                <!-- Мобильное меню с содержанием будет вставлено сюда через JavaScript -->
+            </div>
+        </nav>
+    </header>
+
+    <main class="help-main">
+        <!-- Боковая навигация - вынесена отдельно -->
+        <div class="help-sidebar-wrapper">
+            <div class="help-sidebar" id="helpSidebar">
+                <h2 class="help-sidebar-title">Содержание</h2>
+                <nav class="help-nav-menu">
+                    <a href="#admin-panel" class="help-nav-item">
+                        <i class="fas fa-cog"></i> Админ-панель
+                    </a>
+                    <a href="#gallery" class="help-nav-item">
+                        <i class="fas fa-images"></i> Галерея
+                    </a>
+                    <a href="#qr-page" class="help-nav-item">
+                        <i class="fas fa-qrcode"></i> Страница QR-кода
+                    </a>
+                    <a href="#live-wall" class="help-nav-item">
+                        <i class="fas fa-tv"></i> Live Фотостена
+                    </a>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Мобильное меню с содержанием (скрыто на десктопе, показывается в бургер-меню на мобильных) -->
+        <div class="help-mobile-menu" id="helpMobileMenu" style="display: none;">
+            <h2 class="help-sidebar-title">Содержание</h2>
+            <nav class="help-nav-menu">
+                <a href="#admin-panel" class="help-nav-item">
+                    <i class="fas fa-cog"></i> Админ-панель
+                </a>
+                <a href="#gallery" class="help-nav-item">
+                    <i class="fas fa-images"></i> Галерея
+                </a>
+                <a href="#qr-page" class="help-nav-item">
+                    <i class="fas fa-qrcode"></i> Страница QR-кода
+                </a>
+                <a href="#live-wall" class="help-nav-item">
+                    <i class="fas fa-tv"></i> Live Фотостена
+                </a>
+            </nav>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="help-container">
+            <div class="help-content">
+                <div class="help-intro">
+                    <h1 class="help-title">Инструкция по использованию QR SHOT</h1>
+                    <p class="help-subtitle">Подробное руководство по работе с платформой для сбора фотографий с мероприятий</p>
+                </div>
+
+                <!-- Админ-панель -->
+                <section id="admin-panel" class="help-section">
+                    <h2 class="help-section-title">
+                        <i class="fas fa-cog"></i> Админ-панель
+                    </h2>
+                    
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Вход в админ-панель</h3>
+                        <ol class="help-steps">
+                            <li>Перейдите на главную страницу сайта</li>
+                            <li>Нажмите кнопку <strong>"Админ-панель"</strong> в верхнем меню</li>
+                            <li>Введите логин и пароль администратора</li>
+                            <li>Нажмите <strong>"Войти"</strong></li>
+                        </ol>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Создание мероприятия</h3>
+                        <ol class="help-steps">
+                            <li>В админ-панели нажмите кнопку <strong>"Создать событие"</strong></li>
+                            <li>Заполните вкладку <strong>"Основные"</strong>:
+                                <ul class="help-list">
+                                    <li><strong>Название мероприятия</strong> - укажите название вашего события</li>
+                                    <li><strong>Дата события</strong> - выберите дату проведения</li>
+                                    <li><strong>Время начала</strong> - укажите время начала мероприятия</li>
+                                    <li><strong>Описание</strong> - добавьте описание мероприятия (необязательно)</li>
+                                </ul>
+                            </li>
+                            <li>Настройте вкладку <strong>"Приватность"</strong>:
+                                <ul class="help-list">
+                                    <li><strong>Требуется модерация фото</strong> - включите, если хотите проверять фото перед публикацией</li>
+                                    <li><strong>Доступ к просмотру</strong> - выберите, кто может просматривать галерею (Публичный/По паролю)</li>
+                                    <li>Если выбран доступ "По паролю", укажите пароль для доступа к галерее</li>
+                                    <li><strong>Включить уведомления в Telegram</strong> - включите для получения уведомлений о новых фото на модерации</li>
+                                    <li>Если включены Telegram уведомления, укажите Telegram username и порог количества фото</li>
+                                </ul>
+                            </li>
+                            <li>Нажмите <strong>"Сохранить"</strong> для создания мероприятия</li>
+                        </ol>
+                        <div class="help-note">
+                            <i class="fas fa-info-circle"></i>
+                            <p><strong>Важно:</strong> Вкладка "Брендинг" доступна только после создания мероприятия. Вы сможете настроить внешний вид страницы QR-кода позже.</p>
+                        </div>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">После создания мероприятия</h3>
+                        <p class="help-text">
+                            После создания мероприятия вы можете редактировать его настройки, нажав кнопку <strong>"Настройки"</strong> рядом с мероприятием в списке событий. 
+                            В модальном окне настроек доступны три вкладки: <strong>"Основные"</strong>, <strong>"Приватность"</strong> и <strong>"Брендинг"</strong>.
+                        </p>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Вкладка "Основные"</h3>
+                        <p class="help-text">Во вкладке "Основные" вы можете изменить:</p>
+                        <ul class="help-list">
+                            <li><strong>Название события</strong> - изменить название мероприятия</li>
+                            <li><strong>Дата события</strong> - изменить дату проведения</li>
+                            <li><strong>Время начала</strong> - изменить время начала мероприятия</li>
+                            <li><strong>Описание</strong> - изменить или добавить описание мероприятия</li>
+                        </ul>
+                        <p class="help-text">После внесения изменений нажмите <strong>"Сохранить"</strong>.</p>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Вкладка "Приватность"</h3>
+                        <p class="help-text">Во вкладке "Приватность" вы можете настроить:</p>
+                        <ul class="help-list">
+                            <li><strong>Требуется модерация фото</strong> - включить или отключить модерацию загружаемых фото и видео</li>
+                            <li><strong>Доступ к просмотру</strong> - изменить тип доступа к галерее:
+                                <ul class="help-list">
+                                    <li><strong>Публичный</strong> - любой может просматривать галерею</li>
+                                    <li><strong>По паролю</strong> - для просмотра галереи требуется ввести пароль</li>
+                                </ul>
+                            </li>
+                            <li><strong>Пароль для доступа к галерее</strong> - установить или изменить пароль (отображается только при выборе "По паролю")</li>
+                            <li><strong>Включить уведомления в Telegram</strong> - включить или отключить уведомления о новых фото на модерации</li>
+                            <li><strong>Telegram username</strong> - указать username пользователя Telegram для отправки уведомлений (без символа @)</li>
+                            <li><strong>Порог количества фото для уведомления</strong> - указать минимальное количество фото на модерации, при котором будет отправлено уведомление</li>
+                        </ul>
+                        <div class="help-note">
+                            <i class="fas fa-info-circle"></i>
+                            <p><strong>Примечание:</strong> Пароль для доступа к галерее действителен в течение 3 часов после ввода пользователем.</p>
+                        </div>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Вкладка "Брендинг"</h3>
+                        <p class="help-text">
+                            Вкладка "Брендинг" доступна только после создания мероприятия. Здесь вы можете настроить внешний вид страницы QR-кода:
+                        </p>
+                        <ol class="help-steps">
+                            <li>Откройте настройки мероприятия (кнопка <strong>"Настройки"</strong> рядом с мероприятием)</li>
+                            <li>Перейдите во вкладку <strong>"Брендинг"</strong></li>
+                            <li>Настройте внешний вид:
+                                <ul class="help-list">
+                                    <li><strong>Цветовая схема</strong> - выберите цвет фона для страницы QR-кода</li>
+                                    <li><strong>Логотип</strong> - загрузите логотип для отображения на странице QR-кода (необязательно)
+                                        <ul class="help-list">
+                                            <li>Поддерживаются форматы: JPG, PNG, WebP</li>
+                                            <li>Максимальный размер файла: 10 МБ</li>
+                                            <li>Максимальная ширина отображения: 200px</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Фоновое изображение</strong> - загрузите фоновое изображение для страницы QR-кода (необязательно)
+                                        <ul class="help-list">
+                                            <li>Поддерживаются форматы: JPG, PNG, WebP</li>
+                                            <li>Максимальный размер файла: 10 МБ</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>Вы можете удалить логотип или фоновое изображение отдельно, не затрагивая другие элементы брендинга</li>
+                            <li>Нажмите <strong>"Сохранить"</strong> для применения изменений</li>
+                        </ol>
+                        <div class="help-note">
+                            <i class="fas fa-info-circle"></i>
+                            <p><strong>Важно:</strong> Цвет фона и фоновое изображение применяются только к странице QR-кода. Галерея всегда имеет черный фон, независимо от настроек брендинга.</p>
+                        </div>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Модерация фотографий</h3>
+                        <ol class="help-steps">
+                            <li>Перейдите во вкладку <strong>"Модерация"</strong> в админ-панели</li>
+                            <li>Вы увидите список всех фотографий и видео, ожидающих модерации</li>
+                            <li>Для просмотра фото/видео нажмите кнопку <strong>"Просмотр"</strong></li>
+                            <li>Выберите фотографии/видео, которые хотите одобрить или отклонить:
+                                <ul class="help-list">
+                                    <li>Используйте чекбоксы для выбора отдельных элементов</li>
+                                    <li>Используйте кнопку <strong>"Выбрать все"</strong> для выбора всех элементов</li>
+                                </ul>
+                            </li>
+                            <li>Нажмите <strong>"Одобрить выбранные"</strong> или <strong>"Отклонить выбранные"</strong></li>
+                        </ol>
+                        <div class="help-note">
+                            <i class="fas fa-info-circle"></i>
+                            <p>В модерации отображаются только те фото и видео, для которых включена модерация в настройках мероприятия.</p>
+                        </div>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Аналитика</h3>
+                        <ol class="help-steps">
+                            <li>Перейдите во вкладку <strong>"Аналитика"</strong> в админ-панели</li>
+                            <li>Просмотрите статистику:
+                                <ul class="help-list">
+                                    <li><strong>Общее количество фото</strong> - количество всех загруженных фотографий</li>
+                                    <li><strong>Общее количество видео</strong> - количество всех загруженных видео</li>
+                                    <li><strong>Общий размер фото</strong> - суммарный размер всех фотографий</li>
+                                    <li><strong>Общий размер видео</strong> - суммарный размер всех видео</li>
+                                    <li><strong>Общий суммарный размер</strong> - общий размер всех медиафайлов в ГБ</li>
+                                </ul>
+                            </li>
+                            <li>Изучите график загрузок - он показывает динамику загрузки фото и видео по времени</li>
+                        </ol>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Управление мероприятиями</h3>
+                        <ol class="help-steps">
+                            <li>Во вкладке <strong>"События"</strong> вы увидите список всех мероприятий</li>
+                            <li>Для каждого мероприятия доступны действия:
+                                <ul class="help-list">
+                                    <li><strong>Настройки</strong> - редактирование параметров мероприятия</li>
+                                    <li><strong>QR-код</strong> - просмотр и скачивание QR-кода</li>
+                                    <li><strong>Галерея</strong> - переход к галерее мероприятия</li>
+                                    <li><strong>Удалить</strong> - удаление мероприятия</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Галерея -->
+                <section id="gallery" class="help-section">
+                    <h2 class="help-section-title">
+                        <i class="fas fa-images"></i> Галерея
+                    </h2>
+                    
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Доступ к галерее</h3>
+                        <ol class="help-steps">
+                            <li>Отсканируйте QR-код мероприятия с помощью камеры телефона</li>
+                            <li>Или перейдите по прямой ссылке на галерею (если она была предоставлена)</li>
+                            <li>Если галерея защищена паролем, введите пароль в появившемся окне</li>
+                            <li>Пароль действителен в течение 3 часов после ввода</li>
+                        </ol>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Просмотр фотографий</h3>
+                        <ol class="help-steps">
+                            <li>В галерее перейдите во вкладку <strong>"Фото"</strong></li>
+                            <li>Просмотрите все фотографии в виде сетки</li>
+                            <li>Нажмите на фотографию для просмотра в полном размере</li>
+                            <li>В режиме просмотра:
+                                <ul class="help-list">
+                                    <li>Используйте стрелки влево/вправо для навигации между фото</li>
+                                    <li>Нажмите на крестик или вне области фото для закрытия</li>
+                                    <li>Используйте кнопку <strong>"Поделиться"</strong> для отправки фото через мессенджеры</li>
+                                    <li>Нажмите на сердечко, чтобы поставить лайк</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Просмотр видео</h3>
+                        <ol class="help-steps">
+                            <li>В галерее перейдите во вкладку <strong>"Видео"</strong></li>
+                            <li>Просмотрите все видео в виде сетки</li>
+                            <li>Нажмите на видео для воспроизведения</li>
+                            <li>Видео воспроизводится прямо на странице (не в полноэкранном режиме)</li>
+                            <li>Используйте кнопку <strong>"Поделиться"</strong> для отправки видео через мессенджеры</li>
+                        </ol>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Загрузка фотографий и видео</h3>
+                        <ol class="help-steps">
+                            <li>В галерее нажмите кнопку <strong>"Загрузить фото"</strong> или <strong>"Загрузить видео"</strong></li>
+                            <li>Выберите файлы с вашего устройства:
+                                <ul class="help-list">
+                                    <li>Поддерживаемые форматы фото: JPG, JPEG, PNG, WebP</li>
+                                    <li>Поддерживаемые форматы видео: MP4, MOV, AVI</li>
+                                </ul>
+                            </li>
+                            <li>Если включена модерация, ваши фото/видео появятся в галерее после одобрения администратором</li>
+                            <li>Если модерация отключена, фото/видео появятся в галерее сразу после загрузки</li>
+                        </ol>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Live Фотостена</h3>
+                        <ol class="help-steps">
+                            <li>Если в галерее более 5 фотографий, появится кнопка <strong>"Live Фотостена"</strong></li>
+                            <li>Нажмите на кнопку для перехода к Live Фотостене</li>
+                            <li>Фотостена автоматически отображает фотографии в случайном порядке</li>
+                            <li>Каждое фото отображается в течение 4 секунд с плавными переходами</li>
+                            <li>Новые фотографии появляются автоматически без перезагрузки страницы</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Страница QR-кода -->
+                <section id="qr-page" class="help-section">
+                    <h2 class="help-section-title">
+                        <i class="fas fa-qrcode"></i> Страница QR-кода
+                    </h2>
+                    
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Доступ к странице QR-кода</h3>
+                        <ol class="help-steps">
+                            <li>В админ-панели откройте настройки мероприятия</li>
+                            <li>Нажмите кнопку <strong>"QR-код"</strong> рядом с мероприятием</li>
+                            <li>Или перейдите по прямой ссылке на страницу QR-кода</li>
+                        </ol>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Использование QR-кода</h3>
+                        <ol class="help-steps">
+                            <li>QR-код можно распечатать или скачать для использования на мероприятии</li>
+                            <li>Для скачивания нажмите на меню <strong>"..."</strong> в правом нижнем углу карточки QR-кода</li>
+                            <li>Выберите <strong>"Скачать QR-код"</strong> или <strong>"Распечатать"</strong></li>
+                            <li>Разместите QR-код в удобном месте на мероприятии</li>
+                            <li>Гости могут отсканировать QR-код камерой телефона для доступа к галерее</li>
+                        </ol>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Настройка внешнего вида</h3>
+                        <p class="help-text">
+                            Внешний вид страницы QR-кода настраивается во вкладке <strong>"Брендинг"</strong> в настройках мероприятия. 
+                            Подробнее об этом читайте в разделе <a href="#admin-panel" class="help-link">"Админ-панель" → "Вкладка Брендинг"</a>.
+                        </p>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Переход к Live Фотостене</h3>
+                        <ol class="help-steps">
+                            <li>На странице QR-кода нажмите на меню <strong>"..."</strong> в правом нижнем углу</li>
+                            <li>Выберите <strong>"Live Фотостена"</strong></li>
+                            <li>Вы будете перенаправлены на страницу Live Фотостены</li>
+                            <li>Для возврата нажмите кнопку <strong>"Назад"</strong></li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Live Фотостена -->
+                <section id="live-wall" class="help-section">
+                    <h2 class="help-section-title">
+                        <i class="fas fa-tv"></i> Live Фотостена
+                    </h2>
+                    
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Что такое Live Фотостена</h3>
+                        <p class="help-text">
+                            Live Фотостена - это динамическое отображение фотографий с мероприятия в режиме слайдшоу. 
+                            Фотографии отображаются в случайном порядке с плавными переходами на черном фоне.
+                        </p>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Доступ к Live Фотостене</h3>
+                        <ol class="help-steps">
+                            <li>Live Фотостена доступна только для мероприятий с более чем 5 фотографиями</li>
+                            <li>Перейти к фотостене можно:
+                                <ul class="help-list">
+                                    <li>Из галереи - нажмите кнопку <strong>"Live Фотостена"</strong></li>
+                                    <li>Со страницы QR-кода - через меню <strong>"..."</strong> → <strong>"Live Фотостена"</strong></li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Как работает Live Фотостена</h3>
+                        <ol class="help-steps">
+                            <li>Фотографии отображаются в случайном порядке</li>
+                            <li>Каждое фото отображается в течение 4 секунд</li>
+                            <li>Переходы между фото плавные (fade-in/fade-out)</li>
+                            <li>Новые фотографии появляются автоматически без перезагрузки страницы</li>
+                            <li>В верхней части экрана отображается название мероприятия и количество фотографий</li>
+                        </ol>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Навигация</h3>
+                        <ol class="help-steps">
+                            <li>Для возврата в галерею нажмите кнопку <strong>"Назад"</strong> (стрелка влево) в верхнем левом углу</li>
+                            <li>Если вы перешли на фотостену из галереи, кнопка "Назад" вернет вас в галерею</li>
+                            <li>Если вы перешли со страницы QR-кода, кнопка "Назад" вернет вас на страницу QR-кода</li>
+                        </ol>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3 class="help-subsection-title">Особенности</h3>
+                        <ul class="help-list">
+                            <li>Фотостена работает в полноэкранном режиме</li>
+                            <li>Фотографии автоматически подстраиваются под размер экрана</li>
+                            <li>Слайдшоу продолжает работать даже при сворачивании/разворачивании окна браузера</li>
+                            <li>Обновление списка фотографий происходит автоматически каждые 5 секунд</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <div class="help-footer-note">
+                    <i class="fas fa-question-circle"></i>
+                    <p>Если у вас возникли вопросы или проблемы, обратитесь к администратору системы.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <a class="app-logo" href="#top">
+                <span class="app-logo-icon" data-brand-icon>QR</span>
+                <span class="app-logo-text">SHOT</span>
+            </a>
+            <p data-i18n="footerTagline">Делитесь моментами легко и безопасно</p>
+        </div>
+        <p class="footer-note">Все права защищены. Атырау 2026</p>
+    </footer>
+
+    <script>
+        // Бургер-меню для мобильных устройств
+        document.addEventListener('DOMContentLoaded', () => {
+            const helpNavToggle = document.querySelector('.help-nav-toggle');
+            const helpNavContainer = document.getElementById('helpNavControls');
+            const helpMobileMenu = document.getElementById('helpMobileMenu');
+            const helpHeader = document.querySelector('.help-header');
+
+            // Устанавливаем высоту хедера в CSS переменную
+            const updateHeaderHeight = () => {
+                if (helpHeader) {
+                    document.documentElement.style.setProperty('--help-header-height', `${helpHeader.offsetHeight}px`);
+                }
+            };
+            updateHeaderHeight();
+            if (helpHeader && 'ResizeObserver' in window) {
+                const headerResizeObserver = new ResizeObserver(updateHeaderHeight);
+                headerResizeObserver.observe(helpHeader);
+            }
+
+            const closeHelpMenu = () => {
+                if (helpNavContainer) {
+                    helpNavContainer.classList.remove('is-open');
+                }
+                if (helpNavToggle) {
+                    helpNavToggle.setAttribute('aria-expanded', 'false');
+                }
+                document.body.classList.remove('help-menu-open');
+                // Удаляем клон мобильного меню при закрытии
+                const mobileMenuInBurger = document.getElementById('helpMobileMenuInBurger');
+                if (mobileMenuInBurger) {
+                    mobileMenuInBurger.remove();
+                }
+            };
+
+            if (helpNavToggle && helpNavContainer) {
+                helpNavToggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const willOpen = !helpNavContainer.classList.contains('is-open');
+                    
+                    // Если открываем меню и это мобильная версия, вставляем меню с содержанием
+                    if (willOpen && window.innerWidth <= 768 && helpMobileMenu) {
+                        let mobileMenuInBurger = document.getElementById('helpMobileMenuInBurger');
+                        if (!mobileMenuInBurger) {
+                            const mobileMenuClone = helpMobileMenu.cloneNode(true);
+                            mobileMenuClone.id = 'helpMobileMenuInBurger';
+                            mobileMenuClone.style.display = 'block';
+                            // Вставляем после ссылок навигации
+                            helpNavContainer.appendChild(mobileMenuClone);
+                        } else {
+                            mobileMenuInBurger.style.display = 'block';
+                        }
+                    } else if (!willOpen) {
+                        // При закрытии меню удаляем клон, чтобы не накапливались
+                        const mobileMenuInBurger = document.getElementById('helpMobileMenuInBurger');
+                        if (mobileMenuInBurger) {
+                            mobileMenuInBurger.remove();
+                        }
+                    }
+                    
+                    helpNavContainer.classList.toggle('is-open', willOpen);
+                    helpNavToggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                    document.body.classList.toggle('help-menu-open', willOpen);
+                });
+
+                document.addEventListener('click', (event) => {
+                    if (!helpNavContainer.classList.contains('is-open')) return;
+                    if (!helpNavContainer.contains(event.target) && !helpNavToggle.contains(event.target)) {
+                        closeHelpMenu();
+                    }
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && helpNavContainer.classList.contains('is-open')) {
+                        closeHelpMenu();
+                    }
+                });
+
+                // Закрываем меню при клике на ссылку в мобильном меню
+                document.addEventListener('click', (event) => {
+                    if (event.target.closest('#helpMobileMenuInBurger .help-nav-item')) {
+                        closeHelpMenu();
+                    }
+                });
+
+                // Закрываем меню при изменении размера окна (переход с мобильной на десктоп версию)
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        if (window.innerWidth > 768 && helpNavContainer.classList.contains('is-open')) {
+                            closeHelpMenu();
+                        }
+                    }, 250);
+                });
+            }
+        });
+
+        // Плавная прокрутка к якорным ссылкам
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Подсветка активного раздела в навигации
+        const sections = document.querySelectorAll('.help-section');
+        const navItems = document.querySelectorAll('.help-nav-item');
+
+        function updateActiveNav() {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (window.pageYOffset >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href') === `#${current}`) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', updateActiveNav);
+        updateActiveNav();
+    </script>
+</body>
+</html>
+

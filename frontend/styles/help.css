@@ -1,0 +1,587 @@
+/* Стили для страницы инструкций */
+
+html {
+    overflow-x: hidden !important;
+    overflow-y: visible !important; /* Убеждаемся, что вертикальный overflow не блокирует sticky */
+    height: auto !important; /* Убираем ограничения высоты */
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: #ffffff !important; /* Единый белый фон для всей страницы */
+    color: var(--text);
+    position: relative;
+    overflow-x: hidden !important;
+    overflow-y: visible !important; /* Убеждаемся, что вертикальный скролл работает */
+    padding-top: 0 !important; /* Переопределяем padding-top из landing.css */
+    height: auto !important; /* Убираем ограничения высоты */
+    min-height: 100vh; /* Минимальная высота для контента */
+}
+
+body::before {
+    display: none; /* Скрываем градиентный фон */
+}
+
+.help-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #ffffff; /* Белый фон для хедера */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* Более легкая тень */
+    z-index: 1000;
+    padding: 20px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* Легкая граница снизу */
+}
+
+:root {
+    --help-header-height: 80px;
+}
+
+.help-nav {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 clamp(20px, 5vw, 60px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.help-nav-links {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+}
+
+.help-nav-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 16px;
+    background: var(--card-bg);
+    box-shadow: 0 18px 34px rgba(16, 42, 112, 0.12);
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.help-menu-open .help-nav-toggle {
+    background: var(--card-bg);
+    box-shadow: 0 24px 40px rgba(16, 42, 112, 0.15);
+    transform: translateY(1px);
+}
+
+.help-nav-toggle span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: block;
+}
+
+.help-nav-toggle:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.help-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(33, 44, 78, 0.75);
+    font-weight: 500;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    padding: 10px 18px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.help-nav-link:hover {
+    color: var(--primary);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 4px 12px rgba(30, 60, 114, 0.15);
+    transform: translateY(-1px);
+}
+
+.help-main {
+    margin-top: 80px; /* Отступ сверху для фиксированного хедера */
+    padding: 20px clamp(20px, 5vw, 60px) 60px;
+    min-height: calc(100vh - 200px);
+    position: relative;
+    overflow: visible !important; /* Принудительно убираем overflow */
+    overflow-x: visible !important; /* Принудительно убираем горизонтальный overflow */
+    overflow-y: visible !important; /* Принудительно убираем вертикальный overflow */
+    display: flex; /* Используем flex вместо grid для разделения sidebar и контента */
+    gap: 40px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    align-items: flex-start; /* Выравниваем по верху */
+    height: auto; /* Убираем ограничения высоты */
+    background: white;
+}
+
+/* Обертка для боковой навигации - отдельный блок */
+.help-sidebar-wrapper {
+    flex: 0 0 280px; /* Фиксированная ширина, не растягивается */
+    position: relative;
+    align-self: flex-start; /* Выравниваем по верху */
+    /* Убираем height: 100%, так как это ограничивает sticky */
+    overflow: visible !important; /* Принудительно убираем overflow */
+}
+
+/* Боковая навигация */
+.help-sidebar {
+    position: -webkit-sticky !important; /* Для Safari, принудительно */
+    position: sticky !important; /* Принудительно применяем sticky */
+    top: 100px !important; /* Отступ сверху с учетом высоты хедера */
+    height: fit-content;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    overflow-x: visible;
+    background: #ffffff; /* Белый фон */
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* Более легкая тень */
+    z-index: 100; /* Увеличиваем z-index для надежности */
+    border: 1px solid rgba(0, 0, 0, 0.05); /* Легкая граница для разделения */
+}
+
+/* Основной контейнер для контента */
+.help-container {
+    flex: 1; /* Занимает оставшееся пространство */
+    min-width: 0; /* Позволяет flex правильно обрабатывать контент */
+    position: relative; /* Для правильной работы sticky */
+    overflow: visible !important; /* Принудительно убираем overflow */
+}
+
+/* Мобильное меню с содержанием */
+.help-mobile-menu {
+    display: none;
+}
+
+.help-sidebar-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 24px 0;
+    padding-bottom: 18px;
+    border-bottom: 2px solid rgba(30, 60, 114, 0.12);
+    letter-spacing: -0.3px;
+}
+
+.help-nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.help-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    color: var(--text);
+    border-radius: 12px;
+    transition: all 0.25s ease;
+    font-weight: 500;
+    font-size: 15px;
+    letter-spacing: -0.2px;
+}
+
+.help-nav-item i {
+    width: 20px;
+    text-align: center;
+    color: var(--muted);
+}
+
+.help-nav-item:hover {
+    background: linear-gradient(135deg, rgba(30, 60, 114, 0.08) 0%, rgba(42, 82, 152, 0.08) 100%);
+    color: var(--primary);
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(30, 60, 114, 0.1);
+}
+
+.help-nav-item:hover i {
+    color: var(--primary);
+}
+
+.help-nav-item.active {
+    background: linear-gradient(135deg, rgba(30, 60, 114, 0.12) 0%, rgba(42, 82, 152, 0.12) 100%);
+    color: var(--primary);
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(30, 60, 114, 0.15);
+}
+
+.help-nav-item.active i {
+    color: var(--primary);
+}
+
+/* Основной контент */
+.help-content {
+    background: #ffffff; /* Белый фон */
+    border-radius: 20px;
+    padding: 48px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* Более легкая тень */
+    scroll-margin-top: 100px;
+    min-height: 0;
+    overflow: visible !important; /* Принудительно убираем overflow */
+    position: relative; /* Для правильной работы sticky */
+    border: 1px solid rgba(0, 0, 0, 0.05); /* Легкая граница для разделения */
+}
+
+.help-intro {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid rgba(30, 60, 114, 0.12);
+}
+
+.help-title {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 20px 0;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+}
+
+.help-subtitle {
+    font-size: 18px;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.7;
+    font-weight: 400;
+}
+
+/* Разделы */
+.help-section {
+    margin-bottom: 60px;
+    scroll-margin-top: 100px;
+}
+
+.help-section-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 0 0 32px 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 18px;
+    border-bottom: 2px solid rgba(30, 60, 114, 0.12);
+    letter-spacing: -0.4px;
+}
+
+.help-section-title i {
+    font-size: 24px;
+}
+
+/* Подразделы */
+.help-subsection {
+    margin-bottom: 40px;
+}
+
+.help-subsection-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 24px 0;
+    letter-spacing: -0.3px;
+}
+
+.help-text {
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--text);
+    margin: 0 0 24px 0;
+    font-weight: 400;
+}
+
+.help-text a,
+.help-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+    border-bottom: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.help-text a:hover,
+.help-link:hover {
+    color: var(--primary-dark, #1e3c72);
+    border-bottom-color: var(--primary);
+}
+
+/* Списки */
+.help-steps {
+    padding-left: 24px;
+    margin: 0 0 20px 0;
+}
+
+.help-steps li {
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--text);
+    margin-bottom: 14px;
+    font-weight: 400;
+}
+
+.help-steps li strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.help-list {
+    list-style: disc;
+    padding-left: 24px;
+    margin: 12px 0;
+}
+
+.help-list li {
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--text);
+    margin-bottom: 10px;
+    font-weight: 400;
+}
+
+.help-list li strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Заметки */
+.help-note {
+    background: linear-gradient(135deg, rgba(30, 60, 114, 0.06) 0%, rgba(42, 82, 152, 0.06) 100%);
+    border-left: 4px solid var(--primary);
+    padding: 20px 24px;
+    border-radius: 12px;
+    margin: 24px 0;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    box-shadow: 0 2px 8px rgba(30, 60, 114, 0.08);
+}
+
+.help-note i {
+    color: var(--primary);
+    font-size: 20px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.help-note p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text);
+    font-weight: 400;
+}
+
+.help-footer-note {
+    background: linear-gradient(135deg, rgba(30, 60, 114, 0.1) 0%, rgba(42, 82, 152, 0.1) 100%);
+    border-radius: 16px;
+    padding: 28px;
+    margin-top: 48px;
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    box-shadow: 0 4px 16px rgba(30, 60, 114, 0.1);
+}
+
+.help-footer-note i {
+    color: var(--primary);
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.help-footer-note p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text);
+    font-weight: 400;
+}
+
+/* Адаптивность */
+@media (max-width: 968px) {
+    .help-main {
+        flex-direction: column; /* Меняем направление на вертикальное */
+        gap: 30px;
+    }
+
+    .help-sidebar-wrapper {
+        flex: 0 0 auto; /* Убираем фиксированную ширину */
+        width: 100%;
+    }
+
+    .help-sidebar {
+        display: none; /* Скрываем sidebar на планшетах и мобильных */
+        position: static; /* Убираем sticky на мобильных */
+    }
+
+    .help-container {
+        flex: 1 1 auto; /* Контент занимает все пространство */
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    body.help-menu-open {
+        overflow: hidden;
+    }
+
+    .help-header {
+        padding: 12px 0;
+    }
+
+    .help-nav {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .help-nav-toggle {
+        display: inline-flex;
+        margin-left: auto;
+    }
+
+    .help-nav-links {
+        position: fixed;
+        top: calc(var(--help-header-height, 80px) + 12px);
+        left: clamp(16px, 6vw, 28px);
+        right: clamp(16px, 6vw, 28px);
+        flex-direction: column;
+        align-items: stretch;
+        gap: 20px;
+        background: rgba(255, 255, 255, 0.97);
+        border-radius: 20px;
+        box-shadow: 0 24px 52px rgba(21, 40, 84, 0.22);
+        padding: 24px;
+        max-height: calc(100vh - var(--help-header-height, 80px) - 32px);
+        overflow-y: auto;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-8px);
+        transition: opacity 0.25s ease, transform 0.25s ease, background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        z-index: 110;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Добавляем мобильное меню с содержанием в бургер-меню */
+    .help-nav-links.is-open .help-mobile-menu {
+        display: block;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .help-nav-links.is-open {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
+
+    .help-nav-link {
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(42, 82, 152, 0.08);
+        color: var(--secondary-color, rgba(33, 44, 78, 0.75));
+        transition: background-color 0.3s ease, color 0.3s ease;
+        justify-content: flex-start;
+    }
+
+    .help-nav-link:hover {
+        background: rgba(42, 82, 152, 0.15);
+        color: var(--primary);
+        transform: none;
+        box-shadow: none;
+    }
+
+    .help-main {
+        margin-top: 0;
+        padding: 20px 15px;
+    }
+    
+    .help-sidebar {
+        display: none; /* Скрываем sidebar на мобильных */
+    }
+
+    /* Мобильное меню с содержанием в бургер-меню */
+    #helpMobileMenuInBurger {
+        display: block;
+        background: rgba(42, 82, 152, 0.05);
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 8px;
+    }
+
+    #helpMobileMenuInBurger .help-sidebar-title {
+        font-size: 16px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+    }
+
+    #helpMobileMenuInBurger .help-nav-menu {
+        gap: 8px;
+    }
+
+    #helpMobileMenuInBurger .help-nav-item {
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 10px;
+    }
+
+    #helpMobileMenuInBurger .help-nav-item:hover {
+        background: rgba(255, 255, 255, 0.95);
+    }
+
+    .help-content {
+        padding: 24px;
+    }
+
+    .help-title {
+        font-size: 28px;
+    }
+
+    .help-subtitle {
+        font-size: 16px;
+    }
+
+    .help-section-title {
+        font-size: 24px;
+    }
+
+    .help-subsection-title {
+        font-size: 20px;
+    }
+
+    .help-nav-item {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+
+    .help-nav-item i {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .help-nav-item {
+        min-width: 100%;
+    }
+
+    .help-title {
+        font-size: 24px;
+    }
+
+    .help-section-title {
+        font-size: 22px;
+    }
+
+    .help-subsection-title {
+        font-size: 18px;
+    }
+}
+

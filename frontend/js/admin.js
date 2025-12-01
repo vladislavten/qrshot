@@ -818,8 +818,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     navLinks.forEach(link => {
         link.addEventListener('click', (event) => {
+            const href = link.getAttribute('href');
+            // Если ссылка не начинается с #, это внешняя ссылка - не перехватываем
+            if (!href || !href.startsWith('#')) {
+                return; // Позволяем браузеру обработать ссылку нормально
+            }
             event.preventDefault();
-            const targetId = link.getAttribute('href')?.slice(1);
+            const targetId = href.slice(1);
             if (!targetId) return;
             const targetSection = document.getElementById(targetId);
             if (!targetSection) return;
