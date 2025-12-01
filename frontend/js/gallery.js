@@ -1033,11 +1033,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         // If preview fails to load, try original
                         const photoIndex = parseInt(item.dataset.index);
                         const photo = photos[photoIndex];
-                        if (photo && photo.originalUrl && img.src !== photo.originalUrl) {
-                            img.src = photo.originalUrl;
-                        } else {
-                            scheduleMasonryLayout();
-                        }
+                        // Используем preview для миниатюр (быстрее загружается)
+                        // Не заменяем на оригинал, остаемся на preview
+                        scheduleMasonryLayout();
                     }, { once: true });
                 }
             });
@@ -1064,7 +1062,8 @@ document.addEventListener('DOMContentLoaded', () => {
             modalVideo.style.display = 'none';
         }
         if (modalImage) {
-            modalImage.src = photo.originalUrl || photo.url;
+            // Используем preview для модального окна (быстрее загружается)
+            modalImage.src = photo.url; // url уже содержит previewUrl
             modalImage.style.display = 'block';
         }
         

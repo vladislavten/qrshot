@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentDisplayingPhotoId = null; // Защита от повторных вызовов onImageLoad
     let isTimerSet = false; // Флаг, что таймер уже установлен для текущего фото
     let timerPhotoId = null; // ID фото, для которого установлен таймер
+    let photoDisplayStartTime = null; // Время начала отображения текущего фото (для восстановления после сворачивания)
 
     // Используем только одну мягкую анимацию
     const animationClass = 'animation-soft';
@@ -191,12 +192,13 @@ document.addEventListener('DOMContentLoaded', () => {
             showPhotoWall();
 
             // Запускаем отображение ТОЛЬКО если фото еще не отображается
+            // КРИТИЧЕСКИ ВАЖНО: Не вызываем displayNextPhoto() если фото уже отображается ИЛИ в процессе загрузки/анимации
             if (photos.length > 0) {
-                // Проверяем, не отображается ли уже фото
-                if (!photoChangeTimer || !isTimerSet) {
+                // Строгая проверка: таймер должен быть null И флаг должен быть false И currentDisplayingPhotoId должен быть null
+                if (!photoChangeTimer && !isTimerSet && timerPhotoId === null && currentDisplayingPhotoId === null) {
                     displayNextPhoto();
                 } else {
-                    console.log('Photo already displaying, skipping initial displayNextPhoto()');
+                    console.log('Photo already displaying or loading, skipping initial displayNextPhoto(). Timer:', !!photoChangeTimer, 'Flag:', isTimerSet, 'Timer ID:', timerPhotoId, 'Current ID:', currentDisplayingPhotoId);
                 }
             } else {
                 console.error('No photos to display after updatePhotosList');
@@ -271,10 +273,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function displayNextPhoto() {
-        // КРИТИЧЕСКИ ВАЖНО: Если фото уже отображается (таймер активен), НЕ прерываем его
+        // КРИТИЧЕСКИ ВАЖНО: Если флаги установлены, но таймер отсутствует - это ошибка состояния, сбрасываем флаги
+        if (isTimerSet && timerPhotoId !== null && !photoChangeTimer) {
+            console.warn('WARNING: Timer flags are set but timer is null! Resetting flags. Timer ID:', timerPhotoId, 'Current ID:', currentDisplayingPhotoId);
+            isTimerSet = false;
+            timerPhotoId = null;
+            // Если currentDisplayingPhotoId установлен, но таймер отсутствует, возможно фото застряло
+            // Сбрасываем currentDisplayingPhotoId, чтобы разблокировать слайдшоу
+            if (currentDisplayingPhotoId !== null) {
+                console.warn('Resetting currentDisplayingPhotoId to unblock slideshow');
+                currentDisplayingPhotoId = null;
+            }
+        }
+        
+        // КРИТИЧЕСКИ ВАЖНО: Если фото уже отображается (таймер активен ИЛИ фото в процессе загрузки/анимации), НЕ прерываем его
         // Это предотвращает преждевременное переключение фото
-        if (photoChangeTimer && isTimerSet && timerPhotoId !== null) {
-            console.log('Photo is currently displaying, skipping displayNextPhoto(). Current photo ID:', timerPhotoId);
+        // Проверяем не только таймер, но и currentDisplayingPhotoId, чтобы блокировать вызовы во время fade-in
+        if ((photoChangeTimer && isTimerSet && timerPhotoId !== null) || currentDisplayingPhotoId !== null) {
+            console.log('Photo is currently displaying or loading, skipping displayNextPhoto(). Current photo ID:', currentDisplayingPhotoId || timerPhotoId, 'Timer:', !!photoChangeTimer, 'Flag:', isTimerSet);
             return;
         }
         
@@ -284,10 +300,10 @@ document.addEventListener('DOMContentLoaded', () => {
             photoChangeTimer = null;
         }
         
-        // Сбрасываем защиту от повторных вызовов
-        currentDisplayingPhotoId = null;
+        // ВАЖНО: Сбрасываем защиту от повторных вызовов ТОЛЬКО если мы действительно переключаемся на новое фото
         isTimerSet = false; // Сбрасываем флаг таймера
         timerPhotoId = null; // Сбрасываем ID фото для таймера
+        photoDisplayStartTime = null; // Сбрасываем время начала отображения
 
         let photo = getRandomPhoto();
         if (!photo || !currentPhoto) {
@@ -297,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, POLL_INTERVAL);
             return;
         }
-
+        
         // Проверяем, не пытаемся ли показать то же самое фото
         if (lastPhotoId === photo.id && photos.length > 1) {
             console.log('Same photo selected, getting another one. Last ID:', lastPhotoId, 'Selected ID:', photo.id);
@@ -317,6 +333,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // КРИТИЧЕСКИ ВАЖНО: Устанавливаем currentDisplayingPhotoId СРАЗУ после выбора фото,
+        // ДО начала загрузки изображения, чтобы заблокировать повторные вызовы displayNextPhoto()
+        // во время загрузки и fade-in
+        currentDisplayingPhotoId = photo.id;
+
         // Устанавливаем новое фото
         const imageUrl = photo.previewUrl || photo.url;
         console.log('Displaying photo:', photo.id, 'Previous photo ID:', lastPhotoId, 'URL:', imageUrl);
@@ -330,15 +351,19 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPhoto.style.animation = '';
         
         // Обработчик успешной загрузки изображения
+        // ВАЖНО: Сохраняем ID фото в локальную переменную ДО создания обработчика,
+        // чтобы избежать проблем с замыканиями, если photo изменится
+        const photoIdForThisLoad = photo.id;
+        
         const onImageLoad = () => {
-            // Защита от повторных вызовов для того же фото
-            if (currentDisplayingPhotoId === photo.id) {
-                console.log('onImageLoad already called for photo:', photo.id, 'ignoring duplicate call');
+            // Защита от повторных вызовов: проверяем, что это все еще то же фото
+            if (currentDisplayingPhotoId !== photoIdForThisLoad) {
+                console.log('Photo changed during image load, ignoring onImageLoad. Current ID:', currentDisplayingPhotoId, 'Expected ID:', photoIdForThisLoad);
                 return;
             }
             
-            currentDisplayingPhotoId = photo.id;
-            console.log('Image loaded successfully:', imageUrl, 'Photo ID:', photo.id);
+            // currentDisplayingPhotoId уже установлен в displayNextPhoto(), просто проверяем, что он совпадает
+            console.log('Image loaded successfully:', imageUrl, 'Photo ID:', photoIdForThisLoad);
             
             // Очищаем предыдущий таймер ПЕРЕД установкой нового
             if (photoChangeTimer) {
@@ -362,8 +387,9 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPhoto.className = animationClass;
             
             // Еще раз проверяем, что это все еще то же фото (на случай если уже переключились)
-            if (currentDisplayingPhotoId !== photo.id) {
-                console.log('Photo changed during load, ignoring display for:', photo.id);
+            // Используем локальную переменную для надежности
+            if (currentDisplayingPhotoId !== photoIdForThisLoad) {
+                console.log('Photo changed during load, ignoring display for:', photoIdForThisLoad, 'Current ID:', currentDisplayingPhotoId);
                 return;
             }
             
@@ -407,20 +433,21 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // После завершения fade-in (1.2 сек), фото становится видимым
             setTimeout(() => {
-                if (currentDisplayingPhotoId !== photo.id) {
-                    console.log('Photo changed during fade-in, canceling');
+                // Используем локальную переменную для проверки
+                if (currentDisplayingPhotoId !== photoIdForThisLoad) {
+                    console.log('Photo changed during fade-in, canceling. Current ID:', currentDisplayingPhotoId, 'Expected ID:', photoIdForThisLoad);
                     return;
                 }
                 
                 // КРИТИЧЕСКИ ВАЖНО: Проверяем, не установлен ли уже таймер для этого фото
-                if (isTimerSet && photoChangeTimer && timerPhotoId === photo.id) {
-                    console.log('Timer already set for this photo during fade-in completion, skipping. Photo ID:', photo.id);
+                if (isTimerSet && photoChangeTimer && timerPhotoId === photoIdForThisLoad) {
+                    console.log('Timer already set for this photo during fade-in completion, skipping. Photo ID:', photoIdForThisLoad);
                     return;
                 }
                 
                 // Если таймер установлен для другого фото - очищаем его
-                if (photoChangeTimer && timerPhotoId !== photo.id) {
-                    console.log('Clearing timer for different photo. Old ID:', timerPhotoId, 'New ID:', photo.id);
+                if (photoChangeTimer && timerPhotoId !== photoIdForThisLoad) {
+                    console.log('Clearing timer for different photo. Old ID:', timerPhotoId, 'New ID:', photoIdForThisLoad);
                     clearTimeout(photoChangeTimer);
                     photoChangeTimer = null;
                     isTimerSet = false;
@@ -434,18 +461,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentPhoto.style.transform = '';
                 currentPhoto.classList.add('visible');
                 const displayStartTime = Date.now();
-                console.log('Photo visible, starting display timer. Photo ID:', photo.id, 'Time:', new Date().toISOString());
+                photoDisplayStartTime = displayStartTime; // Сохраняем время начала отображения
+                console.log('Photo visible, starting display timer. Photo ID:', photoIdForThisLoad, 'Time:', new Date().toISOString());
                 
                 // КРИТИЧЕСКИ ВАЖНО: Финальная проверка перед установкой таймера
                 // Если таймер уже установлен для этого фото - не устанавливаем повторно
-                if (isTimerSet && photoChangeTimer && timerPhotoId === photo.id) {
-                    console.log('ERROR: Timer already set for this exact photo! This should not happen. Photo ID:', photo.id);
+                if (isTimerSet && photoChangeTimer && timerPhotoId === photoIdForThisLoad) {
+                    console.log('ERROR: Timer already set for this exact photo! This should not happen. Photo ID:', photoIdForThisLoad);
                     return;
                 }
                 
                 // Убеждаемся, что предыдущий таймер очищен
                 if (photoChangeTimer) {
-                    console.log('Clearing existing timer before setting new one. Old timer ID:', timerPhotoId, 'New photo ID:', photo.id);
+                    console.log('Clearing existing timer before setting new one. Old timer ID:', timerPhotoId, 'New photo ID:', photoIdForThisLoad);
                     clearTimeout(photoChangeTimer);
                     photoChangeTimer = null;
                     isTimerSet = false;
@@ -454,24 +482,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // КРИТИЧЕСКИ ВАЖНО: Устанавливаем флаг и ID фото ТОЛЬКО когда таймер реально устанавливается
                 isTimerSet = true;
-                timerPhotoId = photo.id;
+                timerPhotoId = photoIdForThisLoad;
                 
-                console.log('Setting timer for photo:', photo.id, 'Duration: 4000ms');
+                console.log('Setting timer for photo:', photoIdForThisLoad, 'Duration: 4000ms');
                 
                 // Устанавливаем таймер на отображение фото (4 секунды)
+                // Сохраняем ID фото в локальную переменную для проверки в таймере
+                const timerPhotoIdLocal = photoIdForThisLoad;
+                const displayStartTimeLocal = displayStartTime;
+                
                 photoChangeTimer = setTimeout(() => {
-                    // Проверяем, что это все еще то же фото и таймер установлен для правильного фото
-                    if (currentDisplayingPhotoId !== photo.id || timerPhotoId !== photo.id) {
-                        console.log('Photo changed during display, canceling timer. Current ID:', currentDisplayingPhotoId, 'Timer ID:', timerPhotoId, 'Expected ID:', photo.id);
+                    // КРИТИЧЕСКИ ВАЖНО: Проверяем, что таймер все еще установлен для этого фото
+                    // и что фото не изменилось
+                    if (timerPhotoId !== timerPhotoIdLocal || currentDisplayingPhotoId !== timerPhotoIdLocal) {
+                        console.log('Photo changed during display, canceling timer. Timer ID:', timerPhotoId, 'Expected ID:', timerPhotoIdLocal, 'Current ID:', currentDisplayingPhotoId);
                         return;
                     }
                     
-                    const displayDuration = Date.now() - displayStartTime;
+                    // Дополнительная проверка: убеждаемся, что таймер не был очищен
+                    // ВАЖНО: Внутри колбэка setTimeout photoChangeTimer все еще должен быть установлен
+                    // Но если он был очищен извне, сбрасываем флаги и выходим
+                    if (!photoChangeTimer) {
+                        console.warn('Timer was cleared during display, resetting flags and canceling fade-out');
+                        isTimerSet = false;
+                        timerPhotoId = null;
+                        currentDisplayingPhotoId = null;
+                        return;
+                    }
+                    
+                    const displayDuration = Date.now() - displayStartTimeLocal;
                     console.log('Photo display time ended, starting fade-out. Current photo ID:', lastPhotoId, 'Timer photo ID:', timerPhotoId, 'Displayed for:', displayDuration, 'ms');
                     
                     // Дополнительная проверка: если фото отображалось меньше 3.5 секунд - это ошибка
                     if (displayDuration < 3500) {
-                        console.error('WARNING: Photo displayed for less than 3.5 seconds! Duration:', displayDuration, 'ms. Photo ID:', photo.id);
+                        console.error('WARNING: Photo displayed for less than 3.5 seconds! Duration:', displayDuration, 'ms. Photo ID:', timerPhotoIdLocal);
                     }
                     
                     // Начинаем анимацию исчезновения
@@ -499,6 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         photoChangeTimer = null;
                         currentDisplayingPhotoId = null;
                         isTimerSet = false; // Сбрасываем флаг таймера
+                        photoDisplayStartTime = null; // Сбрасываем время начала отображения
                         
                         // Скрываем фото полностью
                         currentPhoto.classList.remove('fade-out', 'visible');
@@ -512,12 +557,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         displayNextPhoto();
                     }, 1200); // Длительность fade-out анимации (1.2 сек)
                 }, PHOTO_DISPLAY_DURATION);
-            }, 800); // Длительность fade-in анимации (0.8 сек)
+            }, 1200); // Длительность fade-in анимации (1.2 сек)
         };
         
         // Обработчик ошибки загрузки
         const onImageError = () => {
             console.error('Failed to load image:', imageUrl);
+            // Сбрасываем флаги при ошибке загрузки
+            currentDisplayingPhotoId = null;
+            isTimerSet = false;
+            timerPhotoId = null;
+            photoDisplayStartTime = null; // Сбрасываем время начала отображения
             // Пробуем следующее фото
             setTimeout(() => {
                 displayNextPhoto();
@@ -576,22 +626,92 @@ document.addEventListener('DOMContentLoaded', () => {
     // Обработка видимости страницы
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-            // Возобновляем polling и отображение
+            // Возобновляем polling
             startPolling();
-            // Запускаем отображение ТОЛЬКО если фото еще не отображается
-            if (photos.length > 0 && (!photoChangeTimer || !isTimerSet)) {
+            
+            // Если фото отображается, проверяем, сколько времени прошло
+            if (photoDisplayStartTime && timerPhotoId !== null && currentDisplayingPhotoId === timerPhotoId) {
+                const elapsed = Date.now() - photoDisplayStartTime;
+                const remaining = PHOTO_DISPLAY_DURATION - elapsed;
+                
+                console.log('Tab became visible. Photo ID:', timerPhotoId, 'Elapsed:', elapsed, 'ms', 'Remaining:', remaining, 'ms');
+                
+                if (remaining > 0) {
+                    // Фото еще должно отображаться, восстанавливаем таймер на оставшееся время
+                    if (photoChangeTimer) {
+                        clearTimeout(photoChangeTimer);
+                    }
+                    
+                    photoChangeTimer = setTimeout(() => {
+                        // Вызываем логику fade-out из основного таймера
+                        if (timerPhotoId !== null && currentDisplayingPhotoId === timerPhotoId) {
+                            // Находим фото в массиве для получения ID
+                            const photo = photos.find(p => p.id === timerPhotoId);
+                            if (photo) {
+                                // Запускаем fade-out
+                                currentPhoto.style.opacity = '1';
+                                currentPhoto.style.visibility = 'visible';
+                                currentPhoto.style.transform = 'scale(1)';
+                                currentPhoto.classList.remove('visible');
+                                
+                                requestAnimationFrame(() => {
+                                    requestAnimationFrame(() => {
+                                        currentPhoto.classList.remove('fade-out');
+                                        void currentPhoto.offsetHeight;
+                                        currentPhoto.classList.add('fade-out');
+                                    });
+                                });
+                                
+                                // После fade-out переключаемся на следующее фото
+                                setTimeout(() => {
+                                    photoChangeTimer = null;
+                                    currentDisplayingPhotoId = null;
+                                    isTimerSet = false;
+                                    timerPhotoId = null;
+                                    photoDisplayStartTime = null;
+                                    
+                                    currentPhoto.classList.remove('fade-out', 'visible');
+                                    currentPhoto.style.opacity = '';
+                                    currentPhoto.style.visibility = '';
+                                    currentPhoto.style.animation = '';
+                                    currentPhoto.style.transform = '';
+                                    
+                                    console.log('Calling displayNextPhoto() after tab restore');
+                                    displayNextPhoto();
+                                }, 1200);
+                            }
+                        }
+                    }, remaining);
+                    
+                    isTimerSet = true;
+                    console.log('Restored timer for remaining time:', remaining, 'ms');
+                } else {
+                    // Время отображения истекло, переключаемся на следующее фото
+                    console.log('Photo display time expired while tab was hidden, switching to next photo');
+                    if (photoChangeTimer) {
+                        clearTimeout(photoChangeTimer);
+                        photoChangeTimer = null;
+                    }
+                    currentDisplayingPhotoId = null;
+                    isTimerSet = false;
+                    timerPhotoId = null;
+                    photoDisplayStartTime = null;
+                    displayNextPhoto();
+                }
+            } else if (photos.length > 0 && !photoChangeTimer && !isTimerSet && timerPhotoId === null && currentDisplayingPhotoId === null) {
+                // Фото не отображается, запускаем слайдшоу
                 displayNextPhoto();
             }
         } else {
-            // Приостанавливаем polling
+            // Вкладка скрыта - сохраняем состояние, но не очищаем таймеры полностью
+            // Очищаем только polling, таймер фото оставляем (он может работать в фоне)
             if (pollTimer) {
                 clearInterval(pollTimer);
                 pollTimer = null;
             }
-            if (photoChangeTimer) {
-                clearTimeout(photoChangeTimer);
-                photoChangeTimer = null;
-            }
+            // НЕ очищаем photoChangeTimer - он должен продолжить работу
+            // Но сохраняем время, чтобы при возврате можно было восстановить состояние
+            console.log('Tab hidden. Photo ID:', timerPhotoId, 'Start time:', photoDisplayStartTime);
         }
     });
 

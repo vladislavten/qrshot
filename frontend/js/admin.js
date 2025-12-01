@@ -303,12 +303,14 @@ function openModerationPreview(index) {
     if (!item) return;
     
     const isVideo = item.media_type === 'video';
+    // Используем preview_url для фотографий (быстрее загружается), fallback на оригинал если preview нет
+    const previewUrl = (item.preview_url || item.previewUrl) || item.url;
     
     // Скрываем/показываем соответствующие элементы
     if (moderationModalImage) {
         moderationModalImage.style.display = isVideo ? 'none' : 'block';
         if (!isVideo) {
-            moderationModalImage.src = item.url;
+            moderationModalImage.src = previewUrl;
         } else {
             moderationModalImage.src = '';
         }
@@ -317,6 +319,7 @@ function openModerationPreview(index) {
     if (moderationModalVideo) {
         moderationModalVideo.style.display = isVideo ? 'block' : 'none';
         if (isVideo) {
+            // Для видео используем оригинал (preview для видео может отсутствовать)
             moderationModalVideo.src = item.url;
             moderationModalVideo.load();
             // Автоматически запускаем воспроизведение видео
@@ -2398,6 +2401,8 @@ function renderModerationPhotos() {
         const uploadedAt = item.uploaded_at ? new Date(item.uploaded_at).toLocaleString() : '';
         const isVideo = item.media_type === 'video';
         const mediaTypeLabel = isVideo ? 'Видео' : 'Фото';
+        // Используем preview_url для миниатюр (быстрее загружается), fallback на оригинал если preview нет
+        const thumbUrl = (item.preview_url || item.previewUrl) || item.url;
         
         return `
             <div class="moderation-item ${selected ? 'selected' : ''} ${isVideo ? 'moderation-item--video' : 'moderation-item--photo'}" data-index="${index}" data-media-type="${isVideo ? 'video' : 'photo'}">
@@ -2408,7 +2413,7 @@ function renderModerationPhotos() {
                 ${isVideo ? `
                     <video src="${item.url}" class="moderation-thumb" preload="metadata" muted></video>
                 ` : `
-                    <img src="${item.url}" alt="${mediaTypeLabel} ${index + 1}" class="moderation-thumb">
+                    <img src="${thumbUrl}" alt="${mediaTypeLabel} ${index + 1}" class="moderation-thumb">
                 `}
                 <div class="moderation-meta">
                     <small class="moderation-media-type">${mediaTypeLabel}</small>
