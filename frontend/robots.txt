@@ -31,6 +31,6 @@ Disallow: /*.json$
 # Указываем задержку между запросами (10 секунд) для снижения нагрузки на сервер
 Crawl-delay: 10
 
-# Ссылка на карту сайта (раскомментируйте, когда создадите sitemap.xml)
-# Sitemap: https://qrshot.kz/sitemap.xml
+# Ссылка на карту сайта
+Sitemap: https://qrshot.kz/sitemap.xml
 

@@ -14,11 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
             navAdmin: 'Админ-панель',
             navCreate: 'Создать событие',
             heroMessages: [
-                'Собирайте фотографии с мероприятий легко',
+                'Собирайте фотографии и видео с мероприятий легко',
                 'Сканируйте QR код и загружайте ваши фотографии',
                 'Просматривайте галерею и скачивайте все фотографии одним ZIP-архивом.'
             ],
-            heroSubtitle: 'Создавайте QR-коды для мероприятий, позволяйте гостям загружать фотографии и скачивайте всё одним архивом. Без регистрации и приложений.',
+            heroSubtitle: 'Создавайте QR-коды для мероприятий, позволяйте гостям загружать фотографии, видео и скачивайте всё одним архивом. Без регистрации и приложений.',
             heroPrimary: 'Создать мероприятие',
             heroSecondary: 'Узнать больше',
             stepsTitle: 'Как это работает',
@@ -56,11 +56,11 @@ document.addEventListener('DOMContentLoaded', () => {
             navAdmin: 'Admin panel',
             navCreate: 'Create event',
             heroMessages: [
-                'Collect event photos effortlessly',
+                'Collect event photos and videos effortlessly',
                 'Scan the QR code and upload your pictures',
                 'Browse the gallery and download every photo as one ZIP archive.'
             ],
-            heroSubtitle: 'Create QR codes for events, let guests upload photos, and download everything in one archive. No registration or apps needed.',
+            heroSubtitle: 'Create QR codes for events, let guests upload photos, videos, and download everything in one archive. No registration or apps needed.',
             heroPrimary: 'Create event',
             heroSecondary: 'Learn more',
             stepsTitle: 'How it works',
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             navAdmin: 'Әкімшілік панель',
             navCreate: 'Іс-шара құру',
             heroMessages: [
-                'Іс-шара фотоларын оңай жинаңыз',
+                'Іс-шара фотоларын және видеоларын оңай жинаңыз',
                 'QR кодты сканерлеп, фотоларыңызды жүктеңіз',
                 'Галереяны қарап, барлық фотоларды бір ZIP архивімен жүктеп алыңыз.'
             ],
