@@ -135,8 +135,7 @@ body::before {
 
 /* Боковая навигация */
 .help-sidebar {
-    position: -webkit-sticky !important; /* Для Safari, принудительно */
-    position: sticky !important; /* Принудительно применяем sticky */
+    position: fixed; /* Для Safari, принудительно */
     top: 100px !important; /* Отступ сверху с учетом высоты хедера */
     height: fit-content;
     max-height: calc(100vh - 120px);
