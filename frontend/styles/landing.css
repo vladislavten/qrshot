@@ -402,6 +402,18 @@ main {
     flex-direction: column;
     align-items: center;
     gap: 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+a.step-card {
+    cursor: pointer;
+}
+
+a.step-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
 }
 
 .step-icon {
@@ -429,6 +441,30 @@ main {
     color: var(--muted);
     margin: 0;
     line-height: 1.6;
+}
+
+.steps-cta {
+    margin-top: 48px;
+    display: flex;
+    justify-content: center;
+}
+
+.presentation-btn {
+    display: inline-block;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, var(--primary, #1e3c72) 0%, var(--accent, #2a5298) 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 12px rgba(30, 60, 114, 0.2);
+}
+
+.presentation-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(30, 60, 114, 0.3);
 }
 
 .features {
@@ -805,6 +841,14 @@ body.modal-open {
         height: 220%;
     }
 
+    .hero-content,
+    .hero-content h1,
+    .hero-content p {
+        text-align: left;
+    }
+}
+
+@media (max-width: 768px) {
     .hero-content,
     .hero-content h1,
     .hero-content p {

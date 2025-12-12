@@ -15,8 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
             navCreate: 'Создать событие',
             heroMessages: [
                 'Собирайте фотографии и видео с мероприятий легко',
-                'Сканируйте QR код и загружайте ваши фотографии',
-                'Просматривайте галерею и скачивайте все фотографии одним ZIP-архивом.'
+                'Сканируйте QR код и загружайте ваши фотографии и видео',
+                'Просматривайте галерею и скачивайте все фотографиии и видеоодним ZIP-архивом.'
             ],
             heroSubtitle: 'Создавайте QR-коды для мероприятий, позволяйте гостям загружать фотографии, видео и скачивайте всё одним архивом. Без регистрации и приложений.',
             heroPrimary: 'Создать мероприятие',
@@ -57,8 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
             navCreate: 'Create event',
             heroMessages: [
                 'Collect event photos and videos effortlessly',
-                'Scan the QR code and upload your pictures',
-                'Browse the gallery and download every photo as one ZIP archive.'
+                'Scan the QR code and upload your pictures and videos',
+                'Browse the gallery and download every photo and video as one ZIP archive.'
             ],
             heroSubtitle: 'Create QR codes for events, let guests upload photos, videos, and download everything in one archive. No registration or apps needed.',
             heroPrimary: 'Create event',
@@ -99,8 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
             navCreate: 'Іс-шара құру',
             heroMessages: [
                 'Іс-шара фотоларын және видеоларын оңай жинаңыз',
-                'QR кодты сканерлеп, фотоларыңызды жүктеңіз',
-                'Галереяны қарап, барлық фотоларды бір ZIP архивімен жүктеп алыңыз.'
+                'QR кодты сканерлеп, фотоларыңызды және видеоларыңызды жүктеңіз',
+                'Галереяны қарап, барлық фотоларыңызды және видеоларыңызды бір ZIP архивімен жүктеп алыңыз.'
             ],
             heroSubtitle: 'Іс-шаралар үшін QR-код жасаңыз, қонақтар суреттерін жүктесін, бәрін бір архивпен жүктеп алыңыз. Тіркелусіз және қосымшасыз.',
             heroPrimary: 'Іс-шара құру',
